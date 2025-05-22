@@ -11,15 +11,14 @@
 
 <body>
 
-    {{-- Mostrar navbar solo si no estamos en rutas específicas --}}
-    @if (!Request::is('acceso') && !Request::is('acceso/login') && !Request::is('acceso/signup'))
-    @include('partials.navbar')
-    @endif
+    @include('admin.navAdmin')
 
-    <main>
+    <div class="p-3">
         @yield('content')
-    </main>
+    </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/js/bootstrap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
     @stack('scripts')
 </body>

@@ -1,7 +1,7 @@
-<nav class="navbar navbar-expand-lg bg-body-tertiary" style="background-color: #e3f2fd; position: static;" data-bs-theme="light">
+<nav class="navbar navbar-expand-lg bg-body-tertiary" style="background-color: #e3f2fd; position: relative;" data-bs-theme="light">
     <div class="container-fluid">
         <a class="navbar-brand" href="{{ url('/') }}">
-            <img src="{{ asset('img/logo.jpg') }}" class="img-thumbnail border border-black rounded-circle" alt="Logo" style="height: 80px;">
+            <h1>Marbellin</h1>
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar"
@@ -31,12 +31,21 @@
                 </li>
             </ul>
 
-            <form class="d-flex" role="search">
+            <form class="d-flex" role="search" onsubmit="event.preventDefault(); /* agregar lógica aquí */">
                 <input class="form-control me-2" type="search" placeholder="Buscar" aria-label="Buscar">
                 <button class="btn btn-outline-success" type="submit">Buscar</button>
             </form>
 
+            @guest
             <a href="{{ url('/acceso') }}" class="btn btn-outline-primary ms-3">Login / Signup</a>
+            @endguest
+
+            @auth
+            <form method="POST" action="{{ route('logout') }}" class="d-inline ms-3">
+                @csrf
+                <button type="submit" class="btn btn-outline-danger">Cerrar sesión</button>
+            </form>
+            @endauth
         </div>
 
         <!-- Navbar móvil -->
@@ -66,12 +75,21 @@
                     </li>
                 </ul>
 
-                <form class="d-flex mt-3 mb-3" role="search">
+                <form class="d-flex mt-3 mb-3" role="search" onsubmit="event.preventDefault(); /* agregar lógica aquí */">
                     <input class="form-control me-2" type="search" placeholder="Buscar" aria-label="Buscar">
                     <button class="btn btn-outline-success" type="submit">Buscar</button>
                 </form>
 
+                @guest
                 <a href="{{ url('/acceso') }}" class="btn btn-outline-primary ms-3">Login / Signup</a>
+                @endguest
+
+                @auth
+                <form method="POST" action="{{ route('logout') }}" class="d-inline ms-3">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-danger">Cerrar sesión</button>
+                </form>
+                @endauth
             </div>
         </div>
     </div>

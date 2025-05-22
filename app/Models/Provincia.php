@@ -6,19 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Provincia extends Model
 {
-    protected $table = 'provincias'; // Nombre explícito de la tabla
-    protected $primaryKey = 'idProvincia'; // Clave primaria
-    public $incrementing = false; // Si no es autoincrementable
-    protected $keyType = 'string'; // Tipo de la clave primaria (si es string o int)
-    public $timestamps = false; // Si no usas los campos created_at y updated_at
-
-    public function departamento()
-    {
-        return $this->belongsTo(Departamento::class, 'idDepartamento');
-    }
+    protected $primaryKey = 'provincia_id';
+    public $timestamps = false;
 
     public function distritos()
     {
-        return $this->hasMany(Distrito::class, 'idProvincia');
+        return $this->hasMany(Distrito::class, 'provincia_id');
     }
 }
