@@ -14,7 +14,7 @@ class ProductoController extends Controller
         $productos = Producto::all();
         $variantes = VarianteProducto::all();
 
-        return view('admin.productos', compact('productos', 'variantes'));
+        return view('admin.productosAdmin', compact('productos', 'variantes'));
     }
 
 
@@ -41,9 +41,9 @@ class ProductoController extends Controller
         ]);
 
         // Tallas y colores predeterminados
-        $tallas = ['S', 'M', 'L'];
-        $colores = ['Negro', 'Blanco'];
-        $cantidadPorDefecto = 10;
+        $tallas = ['S', 'M', 'L', 'XL'];
+        $colores = ['Negro', 'Blanco', 'Rojo', 'Amarillo'];
+        $cantidadPorDefecto = 17;
 
         foreach ($tallas as $talla) {
             foreach ($colores as $color) {
@@ -83,5 +83,22 @@ class ProductoController extends Controller
         $producto->save();
 
         return redirect()->route('admin.productos')->with('success', 'Producto actualizado correctamente');
+    }
+
+    public function mostrarProductosPublico()
+    {
+        $productos = Producto::all();
+        return view('home', compact('productos'));
+    }
+
+    public function filtrarPorCategoria($nombre)
+    {
+        // Convierte "Semi Hilos" en "semi_hilos"
+        $claveCategoria = strtolower(str_replace(' ', '_', $nombre));
+
+        // Filtra en la base de datos con ese valor
+        $productos = Producto::where('categoria', $claveCategoria)->get();
+
+        return view('home', compact('productos'))->with('categoriaSeleccionada', $nombre);
     }
 }

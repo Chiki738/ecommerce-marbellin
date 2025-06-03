@@ -10,6 +10,9 @@ Route::get('/', function () {
     return view('home');
 });
 
+Route::get('/', [ProductoController::class, 'mostrarProductosPublico']);
+
+
 Route::prefix('acceso')->group(function () {
     Route::get('/', fn() => redirect()->route('login'));
     Route::get('/login', [AuthController::class, 'login'])->name('login');
@@ -24,16 +27,16 @@ Route::get('/provincias/{provincia_id}/distritos', [UbigeoController::class, 'ge
 
 Route::middleware('auth:admin')->group(function () {
     Route::get('/admin', function () {
-        return redirect()->route('admin.productos');
+        return redirect()->route('admin.productosAdmin');
     })->name('admin.home');
 
     // Eliminada ruta con función anónima para /admin/productos
     // Para evitar conflicto con la ruta que usa el controlador ProductoController@index
 
     Route::get('/admin/dashboard', function () {
-        return view('admin.dashboard'); // vista dashboard
-    })->name('admin.dashboard');
-    Route::get('/admin/productos', [ProductoController::class, 'index'])->name('admin.productos');
+        return view('admin.dashboardAdmin'); // vista dashboard
+    })->name('admin.dashboardAdmin');
+    Route::get('/admin/productos', [ProductoController::class, 'index'])->name('admin.productosAdmin');
 });
 
 // Rutas que usan controlador para productos
@@ -41,3 +44,4 @@ Route::post('/productos/crear', [ProductoController::class, 'store'])->name('pro
 Route::put('/variantes/{id}/actualizar', [VarianteController::class, 'actualizarCantidad'])->name('variantes.actualizar');
 Route::delete('/admin/productos/{producto}', [ProductoController::class, 'destroy'])->name('productos.destroy');
 Route::put('productos/{codigo}', [ProductoController::class, 'update'])->name('productos.update');
+Route::get('/categoria/{nombre}', [ProductoController::class, 'filtrarPorCategoria']);

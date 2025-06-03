@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg bg-body-tertiary" style="background-color: #e3f2fd; position: relative;" data-bs-theme="light">
     <div class="container-fluid">
         <a class="navbar-brand" href="{{ url('/') }}">
-            <h1>Marbellin</h1>
+            <img src="{{ asset('img/logo.png') }}" class="" alt="Logo" style="height: 80px;">
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar"
@@ -13,19 +13,71 @@
         <div class="collapse navbar-collapse d-none d-lg-flex" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="#">Inicio</a>
+                    <a class="nav-link active" aria-current="page" href="{{ url('/') }}">Inicio</a>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         Categorías
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Bikinis</a></li>
-                        <li><a class="dropdown-item" href="#">Cacheteros</a></li>
-                        <li><a class="dropdown-item" href="#">Semi Hilos</a></li>
-                        <li><a class="dropdown-item" href="#">Otros productos</a></li>
+                        <li><a class="dropdown-item" href="{{ url('/categoria/Bikinis') }}">Bikinis</a></li>
+                        <li><a class="dropdown-item" href="{{ url('/categoria/Cacheteros') }}">Cacheteros</a></li>
+                        <li><a class="dropdown-item" href="{{ url('/categoria/Semi Hilos') }}">Semi Hilos</a></li>
+                        <li><a class="dropdown-item" href="{{ url('/categoria/Otros productos') }}">Otros productos</a></li>
                     </ul>
                 </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Filtros
+                    </a>
+                    <ul class="dropdown-menu p-3" style="min-width: 300px;">
+                        <!-- Filtro por Color -->
+                        <!-- Filtro por Color -->
+                        <li>
+                            <strong class="dropdown-header">Color</strong>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="Rojo" id="colorRojo">
+                                <label class="form-check-label" for="colorRojo">Rojo</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="Amarillo" id="colorAmarillo">
+                                <label class="form-check-label" for="colorAmarillo">Amarillo</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="Blanco" id="colorBlanco">
+                                <label class="form-check-label" for="colorBlanco">Blanco</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="Negro" id="colorNegro">
+                                <label class="form-check-label" for="colorNegro">Negro</label>
+                            </div>
+                        </li>
+
+                        <hr class="dropdown-divider">
+
+                        <!-- Filtro por Talla -->
+                        <li>
+                            <strong class="dropdown-header">Talla</strong>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="S" id="tallaS">
+                                <label class="form-check-label" for="tallaS">S</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="M" id="tallaM">
+                                <label class="form-check-label" for="tallaM">M</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="L" id="tallaL">
+                                <label class="form-check-label" for="tallaL">L</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="XL" id="tallaXL">
+                                <label class="form-check-label" for="tallaXL">XL</label>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+
                 <li class="nav-item">
                     <a class="nav-link" href="#">Carrito</a>
                 </li>

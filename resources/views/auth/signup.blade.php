@@ -5,7 +5,6 @@
     @csrf
     <h3 class="text-center mb-3">Registrarse</h3>
 
-    {{-- Mensajes de éxito o error --}}
     @if(session('success'))
     <div class="alert alert-success" role="alert">
         {{ session('success') }}
@@ -22,7 +21,6 @@
     </div>
     @endif
 
-    <!-- Datos personales -->
     <div class="row g-3">
         <div class="col-sm-6 form-floating">
             <input type="text" name="nombre" class="form-control" id="nombre" placeholder="Nombre" required>
@@ -34,13 +32,11 @@
         </div>
     </div>
 
-    <!-- Email -->
     <div class="form-floating mt-3">
         <input type="email" name="email" class="form-control" id="email" placeholder="Correo" required>
         <label for="email">Correo electrónico</label>
     </div>
 
-    <!-- Contraseña -->
     <div class="row g-3 mt-3">
         <div class="col-sm-6 form-floating">
             <input type="password" name="password" class="form-control" id="pass" placeholder="Contraseña" required>
@@ -52,7 +48,6 @@
         </div>
     </div>
 
-    <!-- Provincia y distrito -->
     <div class="row mt-3">
         <div class="col-12">
             <label for="provincia" class="form-label">Provincia</label>
@@ -72,7 +67,6 @@
         </div>
     </div>
 
-    <!-- Dirección -->
     <div class="form-floating mt-3">
         <input type="text" name="direccion" class="form-control" id="direccion" placeholder="Dirección" autocomplete="off" required>
         <label for="direccion">Dirección exacta</label>
@@ -83,47 +77,5 @@
 @endsection
 
 @push('scripts')
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const provinciaSelect = document.getElementById("provincia");
-        const distritoSelect = document.getElementById("distrito");
-
-        provinciaSelect.addEventListener("change", function() {
-            const provinciaId = this.value;
-            distritoSelect.innerHTML = provinciaId ?
-                '<option value="">Cargando...</option>' :
-                '<option value="">Seleccionar Distrito</option>';
-
-            if (!provinciaId) return;
-
-            fetch(`/provincias/${provinciaId}/distritos`)
-                .then(res => res.json())
-                .then(data => {
-                    distritoSelect.innerHTML = '<option value="">Seleccionar Distrito</option>';
-                    data.forEach(d => {
-                        distritoSelect.innerHTML += `<option value="${d.distrito_id}">${d.nombre}</option>`;
-                    });
-                })
-                .catch(() => {
-                    distritoSelect.innerHTML = '<option value="">Error al cargar</option>';
-                });
-        });
-    });
-</script>
-
-<script>
-    (() => {
-        'use strict';
-        const forms = document.querySelectorAll('.needs-validation');
-        forms.forEach(form => {
-            form.addEventListener('submit', e => {
-                if (!form.checkValidity()) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                form.classList.add('was-validated');
-            });
-        });
-    })();
-</script>
+<script src="{{ asset('js/signup.js') }}"></script>
 @endpush

@@ -11,10 +11,10 @@
         <div class="collapse navbar-collapse d-none d-lg-flex" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('admin.productos') }}">Productos</a>
+                    <a class="nav-link" href="{{ route('admin.productosAdmin') }}">Productos</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('admin.dashboard') }}">Dashboard</a>
+                    <a class="nav-link" href="{{ route('admin.dashboardAdmin') }}">Dashboard</a>
                 </li>
 
             </ul>
