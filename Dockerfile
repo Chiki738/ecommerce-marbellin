@@ -13,15 +13,16 @@ RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /et
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
+# Dale permisos a storage y bootstrap/cache para que Laravel escriba logs y caches
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
 WORKDIR /var/www/html
 
 RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer
 
-COPY .env.example .env
-RUN composer install --no-dev --optimize-autoloader --verbose \
-    && php artisan config:clear \
-    && php artisan key:generate
+RUN composer install --no-dev --optimize-autoloader --verbose
 
 WORKDIR /var/www/html/public
 
