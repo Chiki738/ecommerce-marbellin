@@ -17,16 +17,21 @@ RUN curl -sS https://getcomposer.org/installer | php \
 
 RUN composer install --no-dev --optimize-autoloader --verbose
 
-# Asegura que bootstrap/cache exista antes de cambiar permisos
+# Asegurar que bootstrap/cache exista
 RUN mkdir -p /var/www/html/bootstrap/cache
 
-# Permisos para que Laravel pueda escribir en storage y bootstrap/cache
+# Permisos para storage y bootstrap/cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Opcional: permisos para toda la app, si es necesario
+# Opcional: dar permisos a toda la app
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
+
+# Regenerar cache de Laravel (config, rutas, vistas)
+RUN php artisan config:cache \
+    && php artisan route:cache \
+    && php artisan view:cache
 
 WORKDIR /var/www/html/public
 
