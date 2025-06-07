@@ -59,12 +59,13 @@ class ProductoController extends Controller
         return redirect()->back()->with('success', 'Producto y variantes generadas automáticamente');
     }
 
-    public function destroy($id)
+    public function destroy($codigo)
     {
-        $producto = Producto::findOrFail($id);
+        $producto = Producto::where('codigo', $codigo)->firstOrFail();
         $producto->delete();
-        return redirect()->back()->with('success', 'Producto y sus variantes eliminados correctamente.');
+        return redirect()->back()->with('success', 'Producto eliminado correctamente.');
     }
+
 
     public function update(Request $request, $codigo)
     {
@@ -82,23 +83,62 @@ class ProductoController extends Controller
 
         $producto->save();
 
-        return redirect()->route('admin.productos')->with('success', 'Producto actualizado correctamente');
+        return redirect()->route('admin.productosAdmin')->with('success', 'Producto actualizado correctamente');
     }
 
     public function mostrarProductosPublico()
     {
-        $productos = Producto::all();
-        return view('home', compact('productos'));
+        $productos = Producto::with('variantes')->get();
+        return view('productos', compact('productos'));
     }
 
-    public function filtrarPorCategoria($nombre)
+    public function filtrar(Request $request)
     {
-        // Convierte "Semi Hilos" en "semi_hilos"
-        $claveCategoria = strtolower(str_replace(' ', '_', $nombre));
+        $colores = $request->input('colores', []);
+        $tallas = $request->input('tallas', []);
+        $categorias = $request->input('categorias', []);
 
-        // Filtra en la base de datos con ese valor
-        $productos = Producto::where('categoria', $claveCategoria)->get();
+        $productos = Producto::query();
 
-        return view('home', compact('productos'))->with('categoriaSeleccionada', $nombre);
+        // Filtrar productos que tengan variantes con cantidad > 0 y coincidan con filtros de color y talla
+        $productos->whereHas('variantes', function ($query) use ($colores, $tallas) {
+            $query->where('cantidad', '>', 0);
+
+            if (!empty($colores)) {
+                $query->whereIn('color', $colores);
+            }
+
+            if (!empty($tallas)) {
+                $query->whereIn('talla', $tallas);
+            }
+        });
+
+        // Filtrar productos por categorías si se especifican
+        if (!empty($categorias)) {
+            $productos->whereIn('categoria', $categorias);
+        }
+
+        // Cargar variantes que cumplen los filtros, para mostrar solo las variantes válidas
+        $productos = $productos->with(['variantes' => function ($query) use ($colores, $tallas) {
+            $query->where('cantidad', '>', 0);
+
+            if (!empty($colores)) {
+                $query->whereIn('color', $colores);
+            }
+
+            if (!empty($tallas)) {
+                $query->whereIn('talla', $tallas);
+            }
+        }])->get();
+
+        return view('productos', compact('productos'));
+    }
+
+    public function detalleProducto($codigo)
+    {
+        // Cargar producto con variantes (solo disponibles)
+        $producto = Producto::where('codigo', $codigo)->with('variantes')->firstOrFail();
+
+        return view('producto.detalle', compact('producto'));
     }
 }

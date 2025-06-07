@@ -14,49 +14,55 @@
 </div>
 @endif
 
-{{-- Alerta de stock bajo y medio --}}
+{{-- Alerta global de stock (agrupado por producto y cantidad de variantes) --}}
 @php
-$stockBajo = [];
-$stockMedio = [];
+$stockAlert = []; // ['productoNombre' => ['bajo' => n, 'medio' => m]]
 @endphp
 
 @foreach ($productos as $producto)
+@php
+$bajoCount = 0;
+$medioCount = 0;
+@endphp
 @foreach ($variantes as $variante)
 @if ($variante->producto_codigo === $producto->codigo)
 @if ($variante->cantidad <= 5)
-    @php
-    $stockBajo[]="Producto: {$producto->nombre}, Color: {$variante->color}, Talla: {$variante->talla}" ;
-    @endphp
+    @php $bajoCount++; @endphp
     @elseif ($variante->cantidad <= 13)
+        @php $medioCount++; @endphp
+        @endif
+        @endif
+        @endforeach
+
+        @if ($bajoCount> 0 || $medioCount > 0)
         @php
-        $stockMedio[]="Producto: {$producto->nombre}, Color: {$variante->color}, Talla: {$variante->talla}" ;
+        $stockAlert[$producto->nombre] = ['bajo' => $bajoCount, 'medio' => $medioCount];
         @endphp
         @endif
-        @endif
-        @endforeach
         @endforeach
 
-        @if (!empty($stockBajo))
-        <div class="alert alert-danger">
-        <strong>¡Advertencia!</strong> Variantes con stock muy bajo:
-        <ul class="mb-0">
-            @foreach ($stockBajo as $mensaje)
-            <li>{{ $mensaje }}</li>
-            @endforeach
-        </ul>
-        </div>
-        @endif
-
-        @if (!empty($stockMedio))
-        <div class="alert alert-warning">
-            <strong>Atención:</strong> Variantes con stock moderado:
-            <ul class="mb-0">
-                @foreach ($stockMedio as $mensaje)
-                <li>{{ $mensaje }}</li>
+        @if (!empty($stockAlert))
+        <div class="alert bg-warning bg-opacity-25 border-warning border-2 rounded" style="color: #5a4b00;">
+            <strong style="color: #842029;">¡Advertencia de stock!</strong>
+            <ul class="mb-0 mt-2" style="color: #5a4b00;">
+                @foreach ($stockAlert as $nombreProducto => $cantidades)
+                <li>
+                    <strong style="color: #5a4b00;">{{ $nombreProducto }}:</strong>
+                    @if ($cantidades['bajo'] > 0)
+                    <span style="color: #a71d2a;">Stock muy bajo ({{ $cantidades['bajo'] }} variante{{ $cantidades['bajo'] > 1 ? 's' : '' }})</span>
+                    @endif
+                    @if ($cantidades['bajo'] > 0 && $cantidades['medio'] > 0)
+                    &nbsp;|&nbsp;
+                    @endif
+                    @if ($cantidades['medio'] > 0)
+                    <span style="color: #856404;">Stock moderado ({{ $cantidades['medio'] }} variante{{ $cantidades['medio'] > 1 ? 's' : '' }})</span>
+                    @endif
+                </li>
                 @endforeach
             </ul>
         </div>
         @endif
+
 
         {{-- Búsqueda y agregar producto --}}
         <div class="d-flex justify-content-around align-items-center mb-5">
@@ -104,7 +110,7 @@ $stockMedio = [];
                                 </div>
                                 <div>
                                     <p class="text-danger"><strong>Stock Bajo:</strong> {{ $stockBajoCount }}</p>
-                                    <p class="text-warning"><strong>Stock Medio:</strong> {{ $stockMedioCount }}</p>
+                                    <p style="color: #cc9a06;"><strong>Stock Medio:</strong> {{ $stockMedioCount }}</p>
                                     <p class="text-success"><strong>Stock Alto:</strong> {{ $stockAltoCount }}</p>
                                 </div>
                             </div>
@@ -197,13 +203,11 @@ $stockMedio = [];
 
         @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
-
         <script>
             document.addEventListener('DOMContentLoaded', () => {
                 const inputBuscar = document.getElementById('buscarProducto');
                 const productos = [...document.querySelectorAll('.producto-item')];
 
-                // Prepara datos para Fuse
                 const listaProductos = productos.map(producto => ({
                     element: producto,
                     codigo: producto.getAttribute('data-codigo'),
@@ -211,34 +215,30 @@ $stockMedio = [];
                 }));
 
                 const fuse = new Fuse(listaProductos, {
-                    keys: ['nombre'], // sólo fuzzy para nombre
+                    keys: ['nombre'],
                     threshold: 0.4,
                     ignoreLocation: true,
-                    // Ignorar tildes y acentos
                     getFn: (obj, path) => {
                         const value = Fuse.config.getFn(obj, path);
-                        return value ? value.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : value;
+                        return value ? value.normalize("NFD").replace(/[̀-ͯ]/g, "") : value;
                     }
                 });
 
                 inputBuscar.addEventListener('input', () => {
-                    let valor = inputBuscar.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+                    let valor = inputBuscar.value.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 
                     if (!valor) {
                         productos.forEach(p => p.style.display = '');
                         return;
                     }
 
-                    // Si el input coincide exactamente con algún código (sin espacios)
                     const matchCodigo = listaProductos.find(p => p.codigo === valor);
 
                     if (matchCodigo) {
-                        // Mostrar solo ese producto por código exacto
                         productos.forEach(p => {
                             p.style.display = p === matchCodigo.element ? '' : 'none';
                         });
                     } else {
-                        // Buscar fuzzy por nombre
                         const resultados = fuse.search(valor);
                         const encontrados = resultados.map(r => r.item.element);
 
@@ -248,7 +248,6 @@ $stockMedio = [];
                     }
                 });
 
-                // Código para botones Editar
                 document.querySelectorAll('.btnEditarProducto').forEach(btn => {
                     btn.addEventListener('click', () => {
                         const codigo = btn.getAttribute('data-codigo');
@@ -278,7 +277,6 @@ $stockMedio = [];
                     });
                 });
 
-                // Habilitar botón actualizar si cambia cantidad
                 document.querySelectorAll('.cantidad-input').forEach(input => {
                     const originalValue = input.value;
                     const row = input.closest('tr');

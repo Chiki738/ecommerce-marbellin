@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg bg-body-tertiary" style="background-color: #e3f2fd; position: relative;" data-bs-theme="light">
+<nav class="navbar navbar-expand-lg bg-body-tertiary border border-bottom-1 border-dark" style="background-color: #e3f2fd; position: relative;" data-bs-theme="light">
     <div class="container-fluid">
         <h1 class="display-6 fw-bold me-3">Administrador</h1>
 

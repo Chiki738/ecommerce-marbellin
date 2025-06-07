@@ -1,7 +1,7 @@
-<nav class="navbar navbar-expand-lg bg-body-tertiary" style="background-color: #e3f2fd; position: relative;" data-bs-theme="light">
+<nav class="navbar navbar-expand-lg bg-light border border-bottom-1 border-dark" style="background-color: #e3f2fd; position: relative;" data-bs-theme="light">
     <div class="container-fluid">
         <a class="navbar-brand" href="{{ url('/') }}">
-            <img src="{{ asset('img/logo.png') }}" class="" alt="Logo" style="height: 80px;">
+            <img src="{{ asset('img/logo.png') }}" alt="Logo" style="height: 80px;">
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar"
@@ -12,82 +12,100 @@
         <!-- Navbar grande -->
         <div class="collapse navbar-collapse d-none d-lg-flex" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                {{-- Inicio --}}
                 <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="{{ url('/') }}">Inicio</a>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Categorías
+                    <a class="nav-link {{ request()->is('/') ? 'text-black' : 'text-secondary' }}" href="{{ url('/') }}">
+                        <i class="fa-solid fa-house"></i>&nbsp;Inicio
                     </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ url('/categoria/Bikinis') }}">Bikinis</a></li>
-                        <li><a class="dropdown-item" href="{{ url('/categoria/Cacheteros') }}">Cacheteros</a></li>
-                        <li><a class="dropdown-item" href="{{ url('/categoria/Semi Hilos') }}">Semi Hilos</a></li>
-                        <li><a class="dropdown-item" href="{{ url('/categoria/Otros productos') }}">Otros productos</a></li>
-                    </ul>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Filtros
-                    </a>
-                    <ul class="dropdown-menu p-3" style="min-width: 300px;">
-                        <!-- Filtro por Color -->
-                        <!-- Filtro por Color -->
-                        <li>
-                            <strong class="dropdown-header">Color</strong>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="Rojo" id="colorRojo">
-                                <label class="form-check-label" for="colorRojo">Rojo</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="Amarillo" id="colorAmarillo">
-                                <label class="form-check-label" for="colorAmarillo">Amarillo</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="Blanco" id="colorBlanco">
-                                <label class="form-check-label" for="colorBlanco">Blanco</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="Negro" id="colorNegro">
-                                <label class="form-check-label" for="colorNegro">Negro</label>
-                            </div>
-                        </li>
-
-                        <hr class="dropdown-divider">
-
-                        <!-- Filtro por Talla -->
-                        <li>
-                            <strong class="dropdown-header">Talla</strong>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="S" id="tallaS">
-                                <label class="form-check-label" for="tallaS">S</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="M" id="tallaM">
-                                <label class="form-check-label" for="tallaM">M</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="L" id="tallaL">
-                                <label class="form-check-label" for="tallaL">L</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="XL" id="tallaXL">
-                                <label class="form-check-label" for="tallaXL">XL</label>
-                            </div>
-                        </li>
-                    </ul>
                 </li>
 
+                {{-- Productos --}}
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Carrito</a>
+                    <a class="nav-link {{ request()->is('productos') ? 'text-black' : 'text-secondary' }}" href="{{ route('productos.vista') }}">
+                        <i class="fa-solid fa-bag-shopping"></i>&nbsp;Productos
+                    </a>
+                </li>
+
+                {{-- Filtros --}}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-black" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" tabindex="0">
+                        <i class="fa-solid fa-filter"></i>&nbsp;Filtros
+                    </a>
+
+                    <form method="GET" action="{{ route('productos.filtrar') }}" class="dropdown-menu p-3" style="min-width: 250px;" id="filtrosForm">
+                        <div class="d-flex flex-column">
+
+                            {{-- Categoría --}}
+                            <div class="mb-3">
+                                <strong class="dropdown-header">Categoría</strong>
+                                @php $categorias = \App\Models\Producto::select('categoria')->distinct()->pluck('categoria'); @endphp
+                                @foreach($categorias as $categoria)
+                                <div class="form-check">
+                                    <input class="form-check-input filtro-checkbox" type="checkbox" name="categorias[]" value="{{ $categoria }}" id="categoria{{ $loop->index }}"
+                                        {{ in_array($categoria, request('categorias', [])) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="categoria{{ $loop->index }}">{{ ucwords(str_replace('_', ' ', $categoria)) }}</label>
+                                </div>
+                                @endforeach
+                            </div>
+
+                            {{-- Color --}}
+                            <div class="mb-3">
+                                <strong class="dropdown-header">Color</strong>
+                                @php
+                                $colores = \App\Models\VarianteProducto::select('color')->distinct()->pluck('color');
+                                @endphp
+                                @foreach($colores as $color)
+                                <div class="form-check">
+                                    <input class="form-check-input filtro-checkbox" type="checkbox" name="colores[]" value="{{ $color }}" id="color{{ $color }}"
+                                        {{ in_array($color, request('colores', [])) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="color{{ $color }}">{{ $color }}</label>
+                                </div>
+                                @endforeach
+                            </div>
+
+                            {{-- Talla --}}
+                            <div class="mb-3">
+                                <strong class="dropdown-header">Talla</strong>
+                                @php
+                                $tallas = \App\Models\VarianteProducto::select('talla')->distinct()->pluck('talla');
+                                @endphp
+                                @foreach($tallas as $talla)
+                                <div class="form-check">
+                                    <input class="form-check-input filtro-checkbox" type="checkbox" name="tallas[]" value="{{ $talla }}" id="talla{{ $talla }}"
+                                        {{ in_array($talla, request('tallas', [])) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="talla{{ $talla }}">{{ $talla }}</label>
+                                </div>
+                                @endforeach
+                            </div>
+
+                            {{-- Botón filtrar --}}
+                            <button type="submit" class="btn btn-primary mt-2">Filtrar</button>
+
+                        </div>
+                    </form>
+                </li>
+
+                {{-- Carrito --}}
+                <li class="nav-item">
+                    @guest
+                    <a href="{{ url('/acceso') }}" class="nav-link text-secondary" title="Debe iniciar sesión para usar el carrito">
+                        <i class="fa-solid fa-cart-shopping"></i>&nbsp;Carrito
+                    </a>
+                    @else
+                    <a href="{{ route('carrito') }}" class="nav-link {{ request()->is('carrito') ? 'text-black' : 'text-secondary' }}">
+                        <i class="fa-solid fa-cart-shopping"></i>&nbsp;Carrito
+                    </a>
+                    @endguest
                 </li>
             </ul>
 
+            {{-- Buscador --}}
             <form class="d-flex" role="search" onsubmit="event.preventDefault(); /* agregar lógica aquí */">
                 <input class="form-control me-2" type="search" placeholder="Buscar" aria-label="Buscar">
                 <button class="btn btn-outline-success" type="submit">Buscar</button>
             </form>
 
+            {{-- Login/Logout --}}
             @guest
             <a href="{{ url('/acceso') }}" class="btn btn-outline-primary ms-3">Login / Signup</a>
             @endguest
@@ -109,21 +127,17 @@
             <div class="offcanvas-body">
                 <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="#">Inicio</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Categorías
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Bikinis</a></li>
-                            <li><a class="dropdown-item" href="#">Cacheteros</a></li>
-                            <li><a class="dropdown-item" href="#">Semi Hilos</a></li>
-                            <li><a class="dropdown-item" href="#">Otros productos</a></li>
-                        </ul>
+                        <a class="nav-link {{ request()->is('/') ? 'text-black' : 'text-secondary' }}" href="{{ url('/') }}">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Carrito</a>
+                        <a class="nav-link {{ request()->is('productos') ? 'text-black' : 'text-secondary' }}" href="{{ route('productos.vista') }}">Productos</a>
+                    </li>
+                    <li class="nav-item">
+                        @guest
+                        <a href="{{ url('/acceso') }}" class="nav-link text-secondary" title="Debe iniciar sesión para usar el carrito">Carrito</a>
+                        @else
+                        <a href="{{ route('carrito') }}" class="nav-link {{ request()->is('carrito') ? 'text-black' : 'text-secondary' }}">Carrito</a>
+                        @endguest
                     </li>
                 </ul>
 

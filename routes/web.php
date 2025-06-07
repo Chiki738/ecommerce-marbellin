@@ -5,13 +5,14 @@ use App\Http\Controllers\UbigeoController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\VarianteController;
-
+use App\Http\Controllers\PedidoController;
+// Ruta de inicio (solo presentación visual)
 Route::get('/', function () {
     return view('home');
-});
+})->name('home');
 
-Route::get('/', [ProductoController::class, 'mostrarProductosPublico']);
-
+// Ruta para ver productos públicos
+Route::get('/productos', [ProductoController::class, 'mostrarProductosPublico'])->name('productos.vista');
 
 Route::prefix('acceso')->group(function () {
     Route::get('/', fn() => redirect()->route('login'));
@@ -22,26 +23,28 @@ Route::prefix('acceso')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
-// API para obtener distritos de una provincia
+// Obtener distritos desde una provincia
 Route::get('/provincias/{provincia_id}/distritos', [UbigeoController::class, 'getDistritos']);
 
+// Rutas protegidas para administrador
 Route::middleware('auth:admin')->group(function () {
-    Route::get('/admin', function () {
-        return redirect()->route('admin.productosAdmin');
-    })->name('admin.home');
-
-    // Eliminada ruta con función anónima para /admin/productos
-    // Para evitar conflicto con la ruta que usa el controlador ProductoController@index
-
-    Route::get('/admin/dashboard', function () {
-        return view('admin.dashboardAdmin'); // vista dashboard
-    })->name('admin.dashboardAdmin');
-    Route::get('/admin/productos', [ProductoController::class, 'index'])->name('admin.productosAdmin');
+    Route::get('/admin', fn() => redirect()->route('admin.productosAdmin'))->name('admin.home');
+    Route::get('/admin/dashboard', fn() => view('admin.dashboardAdmin'))->name('admin.dashboardAdmin');
+    Route::get('/admin/productosAdmin', [ProductoController::class, 'index'])->name('admin.productosAdmin');
 });
 
-// Rutas que usan controlador para productos
+// CRUD productos y variantes
 Route::post('/productos/crear', [ProductoController::class, 'store'])->name('productos.store');
 Route::put('/variantes/{id}/actualizar', [VarianteController::class, 'actualizarCantidad'])->name('variantes.actualizar');
-Route::delete('/admin/productos/{producto}', [ProductoController::class, 'destroy'])->name('productos.destroy');
-Route::put('productos/{codigo}', [ProductoController::class, 'update'])->name('productos.update');
-Route::get('/categoria/{nombre}', [ProductoController::class, 'filtrarPorCategoria']);
+Route::delete('/admin/productos/{codigo}', [ProductoController::class, 'destroy'])->name('productos.destroy');
+Route::put('/productos/{codigo}', [ProductoController::class, 'update'])->name('productos.update');
+
+Route::get('/filtrar', [ProductoController::class, 'filtrar'])->name('productos.filtrar');
+Route::get('/producto/{codigo}', [ProductoController::class, 'detalleProducto'])->name('producto.detalle');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/carrito', [PedidoController::class, 'index'])->name('carrito');
+    Route::post('/carrito/agregar', [PedidoController::class, 'agregarAlCarrito'])->name('carrito.agregar');
+    Route::delete('/carrito/eliminar/{id}', [PedidoController::class, 'remove'])->name('carrito.eliminar');
+    Route::post('/carrito/checkout', [PedidoController::class, 'checkout'])->name('carrito.checkout');
+});

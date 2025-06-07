@@ -30,4 +30,8 @@ class User extends Authenticatable
     protected $casts = [
         'password' => 'hashed',
     ];
+
+    public $incrementing = false;
+    protected $keyType = 'int'; // o 'string' si cliente_id no es entero
+
 }
