@@ -15,7 +15,13 @@ echo "Base de datos lista. Generando caches y clave de app..."
 php artisan config:clear
 php artisan config:cache
 php artisan route:cache
-php artisan view:cache
+
+# Verificar si existen vistas antes de cachear
+if [ -d "resources/views" ]; then
+  php artisan view:cache || echo "No se pudo cachear vistas, pero se continúa..."
+else
+  echo "No se encontró la carpeta resources/views, omitiendo cache de vistas."
+fi
 
 if [ -z "$APP_KEY" ]; then
   php artisan key:generate --force

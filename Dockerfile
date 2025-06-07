@@ -6,17 +6,21 @@ RUN apt-get update && apt-get install -y \
 
 RUN a2enmod rewrite
 
+# Copia tu proyecto completo
 COPY . /var/www/html
 
+# Cambiar DocumentRoot a /public
 RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf
 
 WORKDIR /var/www/html
 
+# Composer
 RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer
 
 RUN composer install --no-dev --optimize-autoloader --verbose
 
+# Crear carpeta de cache y permisos
 RUN mkdir -p /var/www/html/bootstrap/cache
 
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
@@ -25,6 +29,7 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
+# Script de inicio
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
