@@ -17,24 +17,20 @@ RUN curl -sS https://getcomposer.org/installer | php \
 
 RUN composer install --no-dev --optimize-autoloader --verbose
 
-# Asegurar que bootstrap/cache exista
 RUN mkdir -p /var/www/html/bootstrap/cache
 
-# Permisos para storage y bootstrap/cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Opcional: dar permisos a toda la app
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
-# Regenerar cache de Laravel (config, rutas, vistas)
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
+# Copia y da permisos al script de arranque
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 WORKDIR /var/www/html/public
 
 EXPOSE 80
 
-CMD ["apache2-foreground"]
+CMD ["docker-entrypoint.sh"]
