@@ -26,7 +26,7 @@ RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer
 
 # Instala dependencias PHP sin paquetes de desarrollo, optimizando autoload
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader || (cat /root/.composer/composer.log && false)
 
 # Expone puerto 80 para la app web
 EXPOSE 80
