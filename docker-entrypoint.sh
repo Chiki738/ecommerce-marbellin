@@ -37,4 +37,5 @@ if [ -z "$APP_KEY" ]; then
 fi
 
 echo "Inicializando Apache..."
+
 exec apache2-foreground

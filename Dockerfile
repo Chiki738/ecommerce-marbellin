@@ -8,11 +8,14 @@ RUN apt-get update && apt-get install -y \
 # Habilitar mod_rewrite de Apache
 RUN a2enmod rewrite
 
-# Copiar el proyecto completo
-COPY . /var/www/html
-
 # Establecer el DocumentRoot a /public
 RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf
+
+# Permitir que Apache use .htaccess
+RUN sed -i 's|AllowOverride None|AllowOverride All|g' /etc/apache2/apache2.conf
+
+# Copiar el proyecto completo
+COPY . /var/www/html
 
 WORKDIR /var/www/html
 
@@ -20,28 +23,23 @@ WORKDIR /var/www/html
 RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer
 
-# Instalar dependencias de Laravel sin entorno de desarrollo
+# Instalar dependencias Laravel sin entorno de desarrollo
 RUN composer install --no-dev --optimize-autoloader --verbose
 
 # Crear carpetas necesarias para Laravel
-RUN mkdir -p /var/www/html/storage/framework/views \
-    /var/www/html/storage/framework/cache \
-    /var/www/html/storage/framework/sessions \
-    /var/www/html/storage/logs \
-    /var/www/html/bootstrap/cache
+RUN mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions storage/logs bootstrap/cache
 
-# Permisos adecuados
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# Ajustar permisos
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
-# Copiar el script de arranque
+# Copiar script de arranque
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 80
 
-# Iniciar el script personalizado
 CMD ["docker-entrypoint.sh"]
