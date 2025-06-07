@@ -1,6 +1,7 @@
-vendor
 node_modules
+vendor
 storage/*.key
+.env
 storage/debugbar
 storage/framework/cache
 storage/framework/sessions

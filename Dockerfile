@@ -13,15 +13,16 @@ RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /et
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
-# Primero trabajamos en la raíz para composer
 WORKDIR /var/www/html
 
 RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer
 
-RUN composer install --no-dev --optimize-autoloader --verbose
+COPY .env.example .env
+RUN composer install --no-dev --optimize-autoloader --verbose \
+    && php artisan config:clear \
+    && php artisan key:generate
 
-# Luego cambiamos a /public para Apache
 WORKDIR /var/www/html/public
 
 EXPOSE 80
