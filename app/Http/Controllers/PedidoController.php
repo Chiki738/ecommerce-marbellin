@@ -8,16 +8,17 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Pedido;
 use App\Models\DetallePedido;
 use App\Models\Producto;
-use App\Models\Distrito;
 
 class PedidoController extends Controller
 {
     public function agregarAlCarrito(Request $request)
     {
+        // Si no está logueado, redirige al login
         if (!Auth::check()) {
             return redirect()->route('login');
         }
 
+        // Validar datos del formulario
         $request->validate([
             'producto_codigo' => 'required|string|exists:productos,codigo',
             'talla' => 'required|string',
@@ -29,12 +30,15 @@ class PedidoController extends Controller
             $user = Auth::user();
             Log::info("Cliente autenticado: " . $user->cliente_id);
 
+            // Obtener producto
             $producto = Producto::where('codigo', $request->producto_codigo)->firstOrFail();
 
-            // Obtener distrito y provincia para la dirección del envío
-            $distrito = Distrito::find($user->distrito_id);
-            $provincia = $distrito ? $distrito->provincia : null;
+            // Obtener distrito y provincia para envío
+            $distrito = $user->distrito;
+            $provincia = $distrito?->provincia;
 
+
+            // Obtener o crear pedido pendiente para el cliente
             $pedido = Pedido::firstOrCreate(
                 ['cliente_id' => $user->cliente_id, 'estado' => 'pendiente'],
                 [
@@ -46,9 +50,11 @@ class PedidoController extends Controller
                 ]
             );
 
+            // Calcular subtotal
             $precioUnit = $producto->precio;
             $subtotal = $precioUnit * $request->cantidad;
 
+            // Crear detalle de pedido (producto en carrito)
             DetallePedido::create([
                 'pedido_id' => $pedido->id,
                 'producto_codigo' => $producto->codigo,
@@ -59,6 +65,7 @@ class PedidoController extends Controller
                 'subtotal' => $subtotal,
             ]);
 
+            // Actualizar total del pedido
             $pedido->total += $subtotal;
             $pedido->save();
 
@@ -69,5 +76,51 @@ class PedidoController extends Controller
             Log::error("Error al agregar al carrito: " . $e->getMessage());
             return redirect()->back()->with('error', 'Ocurrió un error al agregar el producto');
         }
+    }
+
+    public function index()
+    {
+        $user = Auth::user();
+
+        $pedido = Pedido::where('cliente_id', $user->cliente_id)
+            ->where('estado', 'pendiente')
+            ->with('detalles.producto')
+            ->first();
+
+        return view('carrito.index', compact('pedido'));
+    }
+
+    public function actualizarCantidad(Request $request, $id)
+    {
+        $detalle = DetallePedido::findOrFail($id);
+
+        $request->validate([
+            'cantidad' => 'required|integer|min:1',
+        ]);
+
+        $detalle->cantidad = $request->cantidad;
+        $detalle->subtotal = $detalle->precio_unit * $request->cantidad;
+        $detalle->save();
+
+        // Recalcular el total del pedido
+        $pedido = $detalle->pedido;
+        $pedido->total = $pedido->detalles()->sum('subtotal');
+        $pedido->save();
+
+        return redirect()->back()->with('success', 'Cantidad actualizada correctamente');
+    }
+
+    public function eliminar($id)
+    {
+        $detalle = DetallePedido::findOrFail($id);
+        $pedido = $detalle->pedido;
+
+        $detalle->delete();
+
+        // Actualizar el total del pedido
+        $pedido->total = $pedido->detalles()->sum('subtotal');
+        $pedido->save();
+
+        return redirect()->route('carrito')->with('success', 'Producto eliminado del carrito');
     }
 }

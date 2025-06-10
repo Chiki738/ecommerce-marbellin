@@ -6,7 +6,7 @@
         @foreach($productos as $producto)
         <div class="col-md-4 mb-4">
             <div class="card shadow" style="width: 18rem;">
-                <img src="{{ asset('storage/' . $producto->imagen) }}"
+                <img src="{{ asset($producto->imagen) }}"
                     class="card-img-top"
                     alt="{{ $producto->nombre }}"
                     style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover;">
@@ -23,4 +23,56 @@
         @endforeach
     </div>
 </div>
+
+<!-- Spinner de carga global -->
+<div id="loading-overlay" style="display: none;">
+    <div class="spinner-border text-dark" role="status">
+        <span class="visually-hidden">Cargando...</span>
+    </div>
+</div>
+
+<!-- Estilos del spinner -->
+<style>
+    #loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(255, 255, 255, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+</style>
+
+<!-- Script para mostrar el spinner al navegar -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const overlay = document.getElementById('loading-overlay');
+
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                const href = link.getAttribute('href');
+                if (
+                    href &&
+                    !href.startsWith('#') &&
+                    !href.startsWith('javascript:') &&
+                    !link.classList.contains('no-spinner')
+                ) {
+                    overlay.style.display = 'flex';
+                }
+            });
+        });
+
+        document.querySelectorAll('form').forEach(form => {
+            if (!form.hasAttribute('onsubmit') && !form.classList.contains('no-spinner')) {
+                form.addEventListener('submit', () => {
+                    overlay.style.display = 'flex';
+                });
+            }
+        });
+    });
+</script>
 @endsection

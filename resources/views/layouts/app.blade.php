@@ -13,7 +13,6 @@
 </head>
 
 <body>
-
     {{-- Mostrar navbar solo si no estamos en rutas específicas --}}
     @if (!Request::is('acceso') && !Request::is('acceso/login') && !Request::is('acceso/signup'))
     @include('partials.navbar')

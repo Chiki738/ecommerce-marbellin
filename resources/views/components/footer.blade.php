@@ -13,7 +13,7 @@
                         <strong>Email:</strong><br>
                         <a href="mailto:servicioalcliente@tiendasmass.pe" class="text-secondary text-decoration-none">servicioalcliente@tiendasmass.pe</a>
                     </li>
-                    <li class="mt-3">
+                    <li><i class="fa-solid text-primary fa-clock me-2"></i>
                         <strong>Horario de atención:</strong><br>
                         Lunes a sábado: 8:00 - 20:00<br>
                         Domingo: 9:00 - 18:00

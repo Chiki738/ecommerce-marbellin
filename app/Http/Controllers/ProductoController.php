@@ -5,7 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Producto;
 use App\Models\VarianteProducto;
-
+use Cloudinary\Cloudinary;
+use App\Models\Pedido;
+use App\Models\DetallePedido;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class ProductoController extends Controller
 {
@@ -29,14 +33,37 @@ class ProductoController extends Controller
             'categoria' => 'required|string|max:255',
         ]);
 
-        $rutaImagen = $request->file('imagen')->store('productos', 'public');
+        // Configura Cloudinary
+        $cloudinary = new Cloudinary([
+            'cloud' => [
+                'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+                'api_key'    => env('CLOUDINARY_API_KEY'),
+                'api_secret' => env('CLOUDINARY_API_SECRET'),
+            ],
+            'url' => [
+                'secure' => true
+            ]
+        ]);
+
+        // Subir imagen a Cloudinary
+        $uploadedFileUrl = $cloudinary->uploadApi()->upload(
+            $request->file('imagen')->getRealPath(),
+            [
+                'folder' => 'samples/ecommerce', // mismo folder que configuraste en Cloudinary
+                'use_filename' => true,
+                'unique_filename' => false,
+                'overwrite' => false,
+            ]
+        );
+
+        $urlImagen = $uploadedFileUrl['secure_url']; // URL pública de la imagen subida
 
         $producto = Producto::create([
             'codigo' => $request->codigo,
             'nombre' => $request->nombre,
             'precio' => $request->precio,
             'descripcion' => $request->descripcion,
-            'imagen' => $rutaImagen,
+            'imagen' => $urlImagen,  // guardamos la URL de Cloudinary
             'categoria' => $request->categoria,
         ]);
 
@@ -77,8 +104,28 @@ class ProductoController extends Controller
         $producto->descripcion = $request->descripcion;
 
         if ($request->hasFile('imagen')) {
-            $imagen = $request->file('imagen')->store('productos', 'public');
-            $producto->imagen = $imagen;
+            // Instancia Cloudinary aquí también
+            $cloudinary = new Cloudinary([
+                'cloud' => [
+                    'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+                    'api_key'    => env('CLOUDINARY_API_KEY'),
+                    'api_secret' => env('CLOUDINARY_API_SECRET'),
+                ],
+                'url' => [
+                    'secure' => true
+                ]
+            ]);
+
+            $uploadedFileUrl = $cloudinary->uploadApi()->upload(
+                $request->file('imagen')->getRealPath(),
+                [
+                    'folder' => 'samples/ecommerce',
+                    'use_filename' => true,
+                    'unique_filename' => false,
+                    'overwrite' => false,
+                ]
+            );
+            $producto->imagen = $uploadedFileUrl['secure_url'];
         }
 
         $producto->save();
@@ -86,11 +133,28 @@ class ProductoController extends Controller
         return redirect()->route('admin.productosAdmin')->with('success', 'Producto actualizado correctamente');
     }
 
-    public function mostrarProductosPublico()
+
+    public function mostrarProductosPublico(Request $request)
     {
-        $productos = Producto::with('variantes')->get();
+        $buscar = $request->input('buscar');
+        $query = Producto::query();
+
+        if ($buscar) {
+            $terminos = explode(' ', $buscar);
+
+            $query->where(function ($q) use ($terminos) {
+                foreach ($terminos as $palabra) {
+                    $q->orWhere('nombre', 'LIKE', '%' . $palabra . '%')
+                        ->orWhere('descripcion', 'LIKE', '%' . $palabra . '%');
+                }
+            });
+        }
+
+        $productos = $query->get();
+
         return view('productos', compact('productos'));
     }
+
 
     public function filtrar(Request $request)
     {
@@ -140,5 +204,59 @@ class ProductoController extends Controller
         $producto = Producto::where('codigo', $codigo)->with('variantes')->firstOrFail();
 
         return view('producto.detalle', compact('producto'));
+    }
+
+    public function autocomplete(Request $request)
+    {
+        $queryOriginal = $request->input('query');
+        $query = $this->normalizar($queryOriginal);
+        $terminos = explode(' ', $query);
+
+        // Calcular puntaje
+        $productos = Producto::all()->map(function ($producto) use ($query, $terminos) {
+            $nombreNormalizado = $this->normalizar($producto->nombre);
+            $puntaje = 0;
+
+            if ($nombreNormalizado === $query) {
+                $puntaje = 3;
+            } elseif (str_contains($nombreNormalizado, $query)) {
+                $puntaje = 2;
+            } elseif (collect($terminos)->every(fn($p) => str_contains($nombreNormalizado, $p))) {
+                $puntaje = 1;
+            }
+
+            return [
+                'producto' => $producto,
+                'puntaje' => $puntaje,
+            ];
+        });
+
+        // Filtrar por el puntaje más alto
+        $puntajeMaximo = $productos->max('puntaje');
+
+        $filtrados = $productos
+            ->filter(fn($item) => $item['puntaje'] === $puntajeMaximo && $item['puntaje'] > 0)
+            ->unique(fn($item) => $item['producto']->nombre)
+            ->take(5)
+            ->values();
+
+        return response()->json($filtrados->map(function ($item) {
+            $producto = $item['producto'];
+            return [
+                'codigo' => $producto->codigo,
+                'nombre' => $producto->nombre,
+                'precio' => $producto->precio,
+                'imagen' => $producto->imagen,
+            ];
+        }));
+    }
+
+    private function normalizar($cadena)
+    {
+        return strtolower(preg_replace(
+            '~[^\pL\d]+~u',
+            ' ',
+            iconv('UTF-8', 'ASCII//TRANSLIT', $cadena)
+        ));
     }
 }

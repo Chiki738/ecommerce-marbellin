@@ -2,19 +2,15 @@
 
 @section('content')
 <style>
-    /* Contenedores para tallas y colores con flexbox */
+    /* Estilos para tallas y colores (igual que el tuyo) */
     .tallas-container,
     .colores-container {
         display: flex;
         flex-wrap: wrap;
-        /* Que bajen a la siguiente línea si no caben */
         gap: 12px;
-        /* Espacio uniforme entre items */
         margin-bottom: 1rem;
-        /* Separación inferior */
     }
 
-    /* Estilos para círculos de colores */
     .color-circle {
         display: inline-block;
         width: 24px;
@@ -26,7 +22,6 @@
         box-sizing: border-box;
     }
 
-    /* Colores definidos */
     .color-blanco {
         background-color: #ffffff;
         border: 1px solid #999;
@@ -52,12 +47,10 @@
         background-color: #ffff00;
     }
 
-    /* Ocultar inputs para mejor estilo */
     input[type="radio"] {
         display: none;
     }
 
-    /* Estilo para labels de talla */
     .talla-label,
     .colores-container label {
         display: flex;
@@ -69,15 +62,12 @@
         cursor: pointer;
     }
 
-    /* Para los nombres de color (texto junto al círculo) */
     .color-name {
-        /* Separamos el texto un poco del círculo */
         margin-left: 4px;
         font-weight: 500;
         transition: color 0.2s, font-weight 0.2s;
     }
 
-    /* Cuando el input radio está seleccionado, el label cambia */
     input[type="radio"]:checked+label.talla-label {
         border: 2px solid #007bff;
         background-color: #e6f0ff;
@@ -93,7 +83,6 @@
         border: 2px solid #007bff;
     }
 
-    /* Deshabilitado con opacidad y cursor no permitido */
     input[type="radio"]:disabled+label {
         color: gray;
         cursor: not-allowed;
@@ -110,9 +99,9 @@
         <div class="col-md-6 d-flex justify-content-center">
             <img
                 class="border border-dark border-2 rounded-3 shadow-lg"
-                src="{{ asset('storage/' . $producto->imagen) }}"
+                src="{{ $producto->imagen }}"
                 alt="{{ $producto->nombre }}"
-                style="width:90%; aspect-ratio: 1 / 1; object-fit: cover;">
+                style="width:100%; aspect-ratio: 1 / 1; object-fit: cover;">
         </div>
         <div class="col-md-6">
             <h2 class="display-4 fw-bold">{{ $producto->nombre }}</h2>
@@ -120,12 +109,10 @@
             <p><strong>Precio:</strong> S/ {{ number_format($producto->precio, 2) }}</p>
             <p class="text">{{ $producto->descripcion }}</p>
 
-            <form method="POST" action="{{ route('carrito.agregar') }}">
+            <form method="POST" action="{{ auth()->check() ? route('carrito.agregar') : url('/acceso/login') }}">
                 @csrf
-                {{-- Enviar el código del producto --}}
                 <input type="hidden" name="producto_codigo" value="{{ $producto->codigo }}">
 
-                {{-- Tallas --}}
                 <div class="tallas-container">
                     @php
                     $tallas = $producto->variantes->pluck('talla')->unique();
@@ -146,7 +133,6 @@
                     @endforeach
                 </div>
 
-                {{-- Colores --}}
                 <div class="colores-container mt-3">
                     @php
                     $colores = $producto->variantes->pluck('color')->unique();
@@ -169,16 +155,41 @@
                     @endforeach
                 </div>
 
-                {{-- Cantidad --}}
                 <div class="mt-3">
                     <label for="cantidad">Cantidad:</label>
                     <input type="number" name="cantidad" id="cantidad" value="1" min="1" class="form-control" style="width: 100px;">
                 </div>
 
-                {{-- Botón --}}
-                <button type="submit" class="btn btn-success mt-4">Agregar al carrito</button>
+                <button type="submit" class="btn btn-success mt-4" {{ auth()->check() ? '' : 'disabled' }}
+                    {{ auth()->check() ? '' : 'title=Debes iniciar sesión para comprar' }}>
+                    {{ auth()->check() ? 'Agregar al carrito' : 'Iniciar sesión para comprar' }}
+                </button>
             </form>
         </div>
     </div>
 </div>
+
+@if(session('carrito_agregado') && auth()->check())
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11000;">
+    <div id="successToast" class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                Agregado correctamente al carrito
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const toastEl = document.getElementById('successToast');
+        if (toastEl) {
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        }
+    });
+</script>
+@endif
+
 @endsection

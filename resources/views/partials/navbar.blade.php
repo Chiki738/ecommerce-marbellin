@@ -99,12 +99,14 @@
                 </li>
             </ul>
 
-            <!-- Buscador + Botones -->
-            <div class="d-flex align-items-center gap-2">
-                <form class="d-flex" role="search">
-                    <input class="form-control me-2" type="search" placeholder="Buscar" aria-label="Buscar" name="buscar">
-                    <button class="btn btn-outline-success" type="submit">Buscar</button>
+            <!-- Buscador sin botón -->
+            <div class="d-flex align-items-center gap-2 position-relative">
+                <form class="d-flex" id="searchForm" onsubmit="return false;" role="search" autocomplete="off">
+                    <input id="searchInput" class="form-control me-2" type="search" placeholder="Buscar" aria-label="Buscar" name="buscar" autocomplete="off" />
                 </form>
+
+
+                <div id="autocompleteResults" class="list-group position-absolute" style="top: 100%; left: 0; right: 0; z-index: 1050;"></div>
 
                 @guest
                 <a href="{{ url('/acceso') }}" class="btn btn-outline-primary">Login / Signup</a>
@@ -117,6 +119,7 @@
                 </form>
                 @endauth
             </div>
+
         </div>
 
         <!-- Navbar móvil -->
@@ -137,15 +140,53 @@
                         @guest
                         <a href="{{ url('/acceso') }}" class="nav-link text-secondary">Carrito</a>
                         @else
-                        <a href="{{ route('carrito') }}" class="nav-link {{ request()->is('carrito') ? 'text-black' : 'text-secondary' }}">Carrito</a>
-                        @endguest
+                        <a href="{{ route('carrito') }}" class="nav-link {{ request()->is('carrito') ? 'text-black' : 'text-secondary' }}">
+                            @endguest
                     </li>
                 </ul>
 
-                <form class="d-flex mt-3 mb-3" role="search">
-                    <input class="form-control me-2" type="search" placeholder="Buscar" aria-label="Buscar" name="buscar">
+                @if(!request()->is('/') && !request()->is('acceso'))
+                <!-- Filtros en móvil -->
+                <form method="GET" action="{{ route('productos.filtrar') }}" class="p-3">
+                    <div class="d-flex flex-column">
+                        <strong class="dropdown-header">Categoría</strong>
+                        @foreach($categorias as $categoria)
+                        <div class="form-check">
+                            <input class="form-check-input filtro-checkbox" type="checkbox" name="categorias[]" value="{{ $categoria }}" id="movilCategoria{{ $loop->index }}"
+                                {{ in_array($categoria, request('categorias', [])) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="movilCategoria{{ $loop->index }}">{{ ucwords(str_replace('_', ' ', $categoria)) }}</label>
+                        </div>
+                        @endforeach
+
+                        <strong class="dropdown-header mt-3">Color</strong>
+                        @foreach($colores as $color)
+                        <div class="form-check">
+                            <input class="form-check-input filtro-checkbox" type="checkbox" name="colores[]" value="{{ $color }}" id="movilColor{{ $color }}"
+                                {{ in_array($color, request('colores', [])) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="movilColor{{ $color }}">{{ $color }}</label>
+                        </div>
+                        @endforeach
+
+                        <strong class="dropdown-header mt-3">Talla</strong>
+                        @foreach($tallas as $talla)
+                        <div class="form-check">
+                            <input class="form-check-input filtro-checkbox" type="checkbox" name="tallas[]" value="{{ $talla }}" id="movilTalla{{ $talla }}"
+                                {{ in_array($talla, request('tallas', [])) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="movilTalla{{ $talla }}">{{ $talla }}</label>
+                        </div>
+                        @endforeach
+
+                        <button type="submit" class="btn btn-primary mt-3">Filtrar</button>
+                    </div>
+                </form>
+                @endif
+
+                <form method="GET" action="{{ route('productos.vista') }}" class="d-flex mt-3 mb-3">
+                    <input class="form-control me-2" type="text" name="buscar" placeholder="Buscar productos...">
                     <button class="btn btn-outline-success" type="submit">Buscar</button>
                 </form>
+
+
 
                 @guest
                 <a href="{{ url('/acceso') }}" class="btn btn-outline-primary ms-3">Login / Signup</a>
@@ -178,44 +219,110 @@
         transition: all 0.3s ease;
     }
 
-    @media (max-width: 1046px) {
-        .navbar-logo {
-            max-height: 40px;
-        }
+    #autocompleteResults {
+        max-height: 200px;
+        overflow-y: auto;
+        background: white;
     }
 
     #loading-overlay {
         position: fixed;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(255, 255, 255, 0.8);
+        width: 100vw;
+        height: 100vh;
+        background: rgba(255, 255, 255, 0.7);
         display: flex;
-        align-items: center;
         justify-content: center;
-        z-index: 9999;
-        pointer-events: auto;
+        align-items: center;
+        z-index: 1100;
     }
 </style>
 
-<!-- Script para mostrar el spinner -->
 <script>
-    // Mostrar spinner en cualquier enlace clickeado
-    document.querySelectorAll('a[href]').forEach(link => {
-        link.addEventListener('click', function(e) {
-            const href = this.getAttribute('href');
-            // Evitar spinner en enlaces con solo #
-            if (href && href !== '#' && !href.startsWith('javascript')) {
-                document.getElementById('loading-overlay').style.display = 'flex';
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('searchInput');
+        const resultsContainer = document.getElementById('autocompleteResults');
+        const loadingOverlay = document.getElementById('loading-overlay');
+
+        let debounceTimeout;
+
+        // Autocompletado
+        searchInput?.addEventListener('input', () => {
+            clearTimeout(debounceTimeout);
+            const query = searchInput.value.trim();
+
+            if (query.length === 0) {
+                resultsContainer.innerHTML = '';
+                resultsContainer.style.display = 'none';
+                return;
+            }
+
+            debounceTimeout = setTimeout(() => {
+                fetch(`/productos/autocomplete?query=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length === 0) {
+                            resultsContainer.innerHTML = '<div class="list-group-item">No se encontraron resultados</div>';
+                        } else {
+                            resultsContainer.innerHTML = data.slice(0, 5).map(producto => `
+                                <a href="/producto/${producto.codigo}" class="list-group-item list-group-item-action d-flex align-items-center sugerencia-link">
+                                    <img src="${producto.imagen}" alt="Imagen" style="width: 40px; height: 40px;" class="me-2">
+                                    <div>
+                                        <strong>${producto.nombre}</strong><br>
+                                        <small class="text-muted">Precio: S/ ${producto.precio}</small>
+                                    </div>
+                                </a>
+                            `).join('');
+                        }
+                        resultsContainer.style.display = 'block';
+                    })
+                    .catch(() => {
+                        resultsContainer.innerHTML = '<div class="list-group-item text-danger">Error al cargar resultados</div>';
+                        resultsContainer.style.display = 'block';
+                    });
+            }, 300);
+        });
+
+        // Oculta sugerencias si haces clic fuera
+        document.addEventListener('click', (e) => {
+            if (!resultsContainer.contains(e.target) && e.target !== searchInput) {
+                resultsContainer.style.display = 'none';
             }
         });
-    });
 
-    // Mostrar spinner en cualquier formulario al enviar
-    document.querySelectorAll('form').forEach(form => {
-        form.addEventListener('submit', function() {
-            document.getElementById('loading-overlay').style.display = 'flex';
+        // Redirección manual si se presiona Enter en el input
+        document.getElementById('searchForm')?.addEventListener('submit', (e) => {
+            e.preventDefault(); // Evita el envío
+            // Puedes hacer aquí lo que necesites (por ejemplo, mostrar mensaje)
+            // o simplemente no hacer nada como en este caso
+        });
+
+
+        // Mostrar spinner al hacer clic en cualquier enlace válido
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                const href = link.getAttribute('href');
+                if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+                    loadingOverlay.style.display = 'flex';
+                }
+            });
+        });
+
+        // También mostrar spinner en enlaces de sugerencias (insertados dinámicamente)
+        resultsContainer.addEventListener('click', (e) => {
+            if (e.target.closest('a.sugerencia-link')) {
+                loadingOverlay.style.display = 'flex';
+            }
+        });
+
+        // Mostrar spinner en formularios normales
+        document.querySelectorAll('form').forEach(form => {
+            if (!form.hasAttribute('onsubmit') && !form.classList.contains('no-spinner')) {
+                form.addEventListener('submit', () => {
+                    loadingOverlay.style.display = 'flex';
+                });
+            }
         });
     });
 </script>

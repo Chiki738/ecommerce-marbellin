@@ -45,6 +45,9 @@ Route::get('/producto/{codigo}', [ProductoController::class, 'detalleProducto'])
 Route::middleware('auth')->group(function () {
     Route::get('/carrito', [PedidoController::class, 'index'])->name('carrito');
     Route::post('/carrito/agregar', [PedidoController::class, 'agregarAlCarrito'])->name('carrito.agregar');
-    Route::delete('/carrito/eliminar/{id}', [PedidoController::class, 'remove'])->name('carrito.eliminar');
+    Route::put('/carrito/actualizar/{id}', [PedidoController::class, 'actualizarCantidad'])->name('carrito.actualizar');
+    Route::delete('/carrito/eliminar/{id}', [PedidoController::class, 'eliminar'])->name('carrito.eliminar');
     Route::post('/carrito/checkout', [PedidoController::class, 'checkout'])->name('carrito.checkout');
 });
+
+Route::get('/productos/autocomplete', [ProductoController::class, 'autocomplete'])->name('productos.autocomplete');

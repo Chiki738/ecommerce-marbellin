@@ -34,4 +34,8 @@ class User extends Authenticatable
     public $incrementing = false;
     protected $keyType = 'int'; // o 'string' si cliente_id no es entero
 
+    public function distrito()
+    {
+        return $this->belongsTo(Distrito::class, 'distrito_id');
+    }
 }

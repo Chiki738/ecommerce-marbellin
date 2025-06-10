@@ -98,10 +98,7 @@ $medioCount = 0;
                             data-bs-target="#flush-collapse{{ $loop->index }}"
                             aria-expanded="false"
                             aria-controls="flush-collapse{{ $loop->index }}">
-                            <img src="{{ asset('storage/' . $producto->imagen) }}"
-                                alt="{{ $producto->nombre }}"
-                                class="img-thumbnail"
-                                style="width: 200px; height: 200px; object-fit: cover;">
+                            <img src="{{ $producto->imagen }}" alt="{{ $producto->nombre }}" class="img-thumbnail" style="width: 200px; height: 200px; object-fit: cover;">
                             <div class="d-flex gap-5">
                                 <div>
                                     <p><strong>Código:</strong> {{ $producto->codigo }}</p>
@@ -131,7 +128,7 @@ $medioCount = 0;
                                     data-precio="{{ $producto->precio }}"
                                     data-categoria="{{ $producto->categoria }}"
                                     data-descripcion="{{ $producto->descripcion }}"
-                                    data-imagen="{{ asset('storage/' . $producto->imagen) }}"
+                                    data-imagen="{{ Str::startsWith($producto->imagen, ['http://', 'https://']) ? $producto->imagen : asset('storage/' . $producto->imagen) }}"
                                     data-bs-toggle="modal"
                                     data-bs-target="#editarProducto">
                                     Editar
