@@ -1,0 +1,19 @@
+.full-height {
+    height: 100vh;
+}
+
+.titulo-responsivo {
+    font-size: clamp(1.8rem, 6vw, 3.75rem);
+    font-weight: 700;
+}
+
+.parrafo-responsivo {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}

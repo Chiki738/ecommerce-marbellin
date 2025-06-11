@@ -1,13 +1,14 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="position-relative full-height w-100">
+<div class="position-relative full-height w-100 h-100" style="height: 100vh;">
     <div class="position-absolute top-0 start-0 w-100 h-100" style="
         background-image: url('/img/fondo.jpg');
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
         filter: brightness(40%);
+        
         z-index: 1;">
     </div>
 
