@@ -31,8 +31,9 @@
                     <div class="border rounded p-2 mb-2">
                         <div class="d-flex justify-content-between">
                             <div>
-                                <span class="badge bg-dark">Color: {{ $detalle->color }}</span>
-                                <span class="badge bg-secondary">Talla: {{ $detalle->talla }}</span>
+                                <span class="badge bg-dark">Color: {{ $detalle->variante->color }}</span>
+                                <span class="badge bg-secondary">Talla: {{ $detalle->variante->talla }}</span>
+
                             </div>
                             <div>
                                 <form action="{{ route('carrito.actualizar', $detalle->id) }}" method="POST" class="d-inline-flex align-items-center me-2">

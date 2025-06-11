@@ -117,7 +117,7 @@ $medioCount = 0;
                     <div id="flush-collapse{{ $loop->index }}" class="accordion-collapse collapse" aria-labelledby="flush-heading{{ $loop->index }}" data-bs-parent="#accordionFlushProductos">
                         <div class="accordion-body">
                             <div>
-                                <p><strong>Categoría:</strong> {{ $producto->categoria }}</p>
+                                <p><strong>Categoría:</strong> {{ $producto->categoria->nombre }}</p>
                                 <p><strong>Descripción:</strong><br>{{ $producto->descripcion }}</p>
                             </div>
 

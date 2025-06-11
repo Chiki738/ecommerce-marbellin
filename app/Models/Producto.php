@@ -12,7 +12,7 @@ class Producto extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = ['codigo', 'nombre', 'precio', 'descripcion', 'imagen', 'categoria'];
+    protected $fillable = ['codigo', 'nombre', 'precio', 'descripcion', 'imagen', 'categoria_id'];
 
     public function variantes(): HasMany
     {
@@ -24,5 +24,10 @@ class Producto extends Model
         static::deleting(function ($producto) {
             $producto->variantes()->delete();
         });
+    }
+
+    public function categoria()
+    {
+        return $this->belongsTo(Categoria::class, 'categoria_id', 'categoria_id');
     }
 }

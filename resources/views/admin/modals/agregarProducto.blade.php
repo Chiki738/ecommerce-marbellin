@@ -29,14 +29,12 @@
                     <textarea name="descripcion" placeholder="Descripción" class="form-control mb-2" required></textarea>
                     <input type="file" name="imagen" class="form-control mb-2" required>
 
-                    <select name="categoria" id="categoria" required class="form-control mb-2">
+                    <select name="categoria_id" id="categoria_id" required class="form-control mb-2">
                         <option value="" disabled selected>Selecciona una categoría</option>
-                        <option value="bikinis">Bikini</option>
-                        <option value="cacheteros">Cachetero</option>
-                        <option value="semi_hilos">Semi Hilos</option>
-                        <option value="otros_productos">Otros Productos</option>
+                        @foreach($categorias as $categoria)
+                        <option value="{{ $categoria->categoria_id }}">{{ $categoria->nombre }}</option>
+                        @endforeach
                     </select>
-
                 </div>
 
                 <div class="modal-footer">

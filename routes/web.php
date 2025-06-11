@@ -6,10 +6,11 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\VarianteController;
 use App\Http\Controllers\PedidoController;
+
 // Ruta de inicio (solo presentación visual)
 Route::get('/', function () {
-    return view('home');
-})->name('home');
+    return view('pages.home');
+})->name('pages.home');
 
 // Ruta para ver productos públicos
 Route::get('/productos', [ProductoController::class, 'mostrarProductosPublico'])->name('productos.vista');
@@ -42,6 +43,7 @@ Route::put('/productos/{codigo}', [ProductoController::class, 'update'])->name('
 Route::get('/filtrar', [ProductoController::class, 'filtrar'])->name('productos.filtrar');
 Route::get('/producto/{codigo}', [ProductoController::class, 'detalleProducto'])->name('producto.detalle');
 
+// Rutas protegidas para usuarios autenticados
 Route::middleware('auth')->group(function () {
     Route::get('/carrito', [PedidoController::class, 'index'])->name('carrito');
     Route::post('/carrito/agregar', [PedidoController::class, 'agregarAlCarrito'])->name('carrito.agregar');
@@ -50,4 +52,5 @@ Route::middleware('auth')->group(function () {
     Route::post('/carrito/checkout', [PedidoController::class, 'checkout'])->name('carrito.checkout');
 });
 
+// Autocomplete para productos
 Route::get('/productos/autocomplete', [ProductoController::class, 'autocomplete'])->name('productos.autocomplete');

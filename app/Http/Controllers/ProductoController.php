@@ -6,10 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Producto;
 use App\Models\VarianteProducto;
 use Cloudinary\Cloudinary;
-use App\Models\Pedido;
-use App\Models\DetallePedido;
-use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
+use App\Models\Categoria;
 
 class ProductoController extends Controller
 {
@@ -18,7 +15,8 @@ class ProductoController extends Controller
         $productos = Producto::all();
         $variantes = VarianteProducto::all();
 
-        return view('admin.productosAdmin', compact('productos', 'variantes'));
+        $categorias = Categoria::all();
+        return view('admin.productosAdmin', compact('productos', 'variantes', 'categorias'));
     }
 
 
@@ -30,7 +28,7 @@ class ProductoController extends Controller
             'precio' => 'required|numeric',
             'descripcion' => 'required|string',
             'imagen' => 'required|image|max:10240',
-            'categoria' => 'required|string|max:255',
+            'categoria_id' => 'required|exists:categorias,categoria_id',
         ]);
 
         // Configura Cloudinary
@@ -63,9 +61,10 @@ class ProductoController extends Controller
             'nombre' => $request->nombre,
             'precio' => $request->precio,
             'descripcion' => $request->descripcion,
-            'imagen' => $urlImagen,  // guardamos la URL de Cloudinary
-            'categoria' => $request->categoria,
+            'imagen' => $urlImagen,
+            'categoria_id' => $request->categoria_id,
         ]);
+
 
         // Tallas y colores predeterminados
         $tallas = ['S', 'M', 'L', 'XL'];
@@ -100,7 +99,7 @@ class ProductoController extends Controller
 
         $producto->nombre = $request->nombre;
         $producto->precio = $request->precio;
-        $producto->categoria = $request->categoria;
+        $producto->categoria_id = $request->categoria_id;
         $producto->descripcion = $request->descripcion;
 
         if ($request->hasFile('imagen')) {
@@ -136,6 +135,9 @@ class ProductoController extends Controller
 
     public function mostrarProductosPublico(Request $request)
     {
+        $categorias = Categoria::all();
+        $colores = VarianteProducto::select('color')->distinct()->pluck('color');
+        $tallas = VarianteProducto::select('talla')->distinct()->pluck('talla');
         $buscar = $request->input('buscar');
         $query = Producto::query();
 
@@ -150,11 +152,10 @@ class ProductoController extends Controller
             });
         }
 
-        $productos = $query->get();
+        $productos = $query->with('categoria')->get();
 
-        return view('productos', compact('productos'));
+        return view('producto.productos', compact('productos', 'categorias', 'colores', 'tallas'));
     }
-
 
     public function filtrar(Request $request)
     {
@@ -179,7 +180,7 @@ class ProductoController extends Controller
 
         // Filtrar productos por categorías si se especifican
         if (!empty($categorias)) {
-            $productos->whereIn('categoria', $categorias);
+            $productos->whereIn('categoria_id', $categorias);
         }
 
         // Cargar variantes que cumplen los filtros, para mostrar solo las variantes válidas
@@ -195,68 +196,70 @@ class ProductoController extends Controller
             }
         }])->get();
 
-        return view('productos', compact('productos'));
+        $categorias = Categoria::all(); // Asegúrate de importar el modelo
+
+        return view('producto.productos', compact('productos', 'categorias'));
     }
 
     public function detalleProducto($codigo)
     {
-        // Cargar producto con variantes (solo disponibles)
-        $producto = Producto::where('codigo', $codigo)->with('variantes')->firstOrFail();
+        $producto = Producto::where('codigo', $codigo)->with('variantes', 'categoria')->firstOrFail();
+        $categorias = Categoria::all(); // 👉 Agrega esta línea
 
-        return view('producto.detalle', compact('producto'));
+        return view('producto.detalle', compact('producto', 'categorias')); // 👉 Incluye $categorias en la vista
     }
 
-    public function autocomplete(Request $request)
-    {
-        $queryOriginal = $request->input('query');
-        $query = $this->normalizar($queryOriginal);
-        $terminos = explode(' ', $query);
+    // public function autocomplete(Request $request)
+    // {
+    //     $queryOriginal = $request->input('query');
+    //     $query = $this->normalizar($queryOriginal);
+    //     $terminos = explode(' ', $query);
 
-        // Calcular puntaje
-        $productos = Producto::all()->map(function ($producto) use ($query, $terminos) {
-            $nombreNormalizado = $this->normalizar($producto->nombre);
-            $puntaje = 0;
+    //     // Calcular puntaje
+    //     $productos = Producto::all()->map(function ($producto) use ($query, $terminos) {
+    //         $nombreNormalizado = $this->normalizar($producto->nombre);
+    //         $puntaje = 0;
 
-            if ($nombreNormalizado === $query) {
-                $puntaje = 3;
-            } elseif (str_contains($nombreNormalizado, $query)) {
-                $puntaje = 2;
-            } elseif (collect($terminos)->every(fn($p) => str_contains($nombreNormalizado, $p))) {
-                $puntaje = 1;
-            }
+    //         if ($nombreNormalizado === $query) {
+    //             $puntaje = 3;
+    //         } elseif (str_contains($nombreNormalizado, $query)) {
+    //             $puntaje = 2;
+    //         } elseif (collect($terminos)->every(fn($p) => str_contains($nombreNormalizado, $p))) {
+    //             $puntaje = 1;
+    //         }
 
-            return [
-                'producto' => $producto,
-                'puntaje' => $puntaje,
-            ];
-        });
+    //         return [
+    //             'producto' => $producto,
+    //             'puntaje' => $puntaje,
+    //         ];
+    //     });
 
-        // Filtrar por el puntaje más alto
-        $puntajeMaximo = $productos->max('puntaje');
+    //     // Filtrar por el puntaje más alto
+    //     $puntajeMaximo = $productos->max('puntaje');
 
-        $filtrados = $productos
-            ->filter(fn($item) => $item['puntaje'] === $puntajeMaximo && $item['puntaje'] > 0)
-            ->unique(fn($item) => $item['producto']->nombre)
-            ->take(5)
-            ->values();
+    //     $filtrados = $productos
+    //         ->filter(fn($item) => $item['puntaje'] === $puntajeMaximo && $item['puntaje'] > 0)
+    //         ->unique(fn($item) => $item['producto']->nombre)
+    //         ->take(5)
+    //         ->values();
 
-        return response()->json($filtrados->map(function ($item) {
-            $producto = $item['producto'];
-            return [
-                'codigo' => $producto->codigo,
-                'nombre' => $producto->nombre,
-                'precio' => $producto->precio,
-                'imagen' => $producto->imagen,
-            ];
-        }));
-    }
+    //     return response()->json($filtrados->map(function ($item) {
+    //         $producto = $item['producto'];
+    //         return [
+    //             'codigo' => $producto->codigo,
+    //             'nombre' => $producto->nombre,
+    //             'precio' => $producto->precio,
+    //             'imagen' => $producto->imagen,
+    //         ];
+    //     }));
+    // }
 
-    private function normalizar($cadena)
-    {
-        return strtolower(preg_replace(
-            '~[^\pL\d]+~u',
-            ' ',
-            iconv('UTF-8', 'ASCII//TRANSLIT', $cadena)
-        ));
-    }
+    // private function normalizar($cadena)
+    // {
+    //     return strtolower(preg_replace(
+    //         '~[^\pL\d]+~u',
+    //         ' ',
+    //         iconv('UTF-8', 'ASCII//TRANSLIT', $cadena)
+    //     ));
+    // }
 }

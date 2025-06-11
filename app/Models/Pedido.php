@@ -10,21 +10,15 @@ class Pedido extends Model
     protected $fillable = [
         'cliente_id',
         'fecha',
-        'estado',
         'total',
         'direccion_envio',
-        'distrito',      // ✅ AÑADIR
-        'provincia',     // ✅ AÑADIR
+        'distrito_id',
+        'estado_id',
     ];
 
-
+    // App\Models\Pedido.php
     public function detalles()
     {
-        return $this->hasMany(DetallePedido::class, 'pedido_id');
-    }
-
-    public function cliente()
-    {
-        return $this->belongsTo(User::class, 'cliente_id');
+        return $this->hasMany(\App\Models\DetallePedido::class, 'pedido_id');
     }
 }

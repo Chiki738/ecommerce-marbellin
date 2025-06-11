@@ -33,22 +33,34 @@ class PedidoController extends Controller
             // Obtener producto
             $producto = Producto::where('codigo', $request->producto_codigo)->firstOrFail();
 
+            // Verificar si existe la variante y tiene suficiente stock
+            $variante = \App\Models\VarianteProducto::where([
+                ['producto_codigo', '=', $request->producto_codigo],
+                ['talla', '=', $request->talla],
+                ['color', '=', $request->color],
+            ])->first();
+
+
+            if (!$variante || $variante->cantidad < $request->cantidad) {
+                return redirect()->back()->with('error', 'La combinación de talla y color no está disponible o no hay suficiente stock.');
+            }
+
+
             // Obtener distrito y provincia para envío
             $distrito = $user->distrito;
             $provincia = $distrito?->provincia;
 
-
             // Obtener o crear pedido pendiente para el cliente
             $pedido = Pedido::firstOrCreate(
-                ['cliente_id' => $user->cliente_id, 'estado' => 'pendiente'],
+                ['cliente_id' => $user->cliente_id, 'estado_id' => 1], // ✅ 1 = pendiente
                 [
                     'fecha' => now(),
                     'total' => 0,
                     'direccion_envio' => $user->direccion,
-                    'distrito' => $distrito ? $distrito->nombre : null,
-                    'provincia' => $provincia ? $provincia->nombre : null,
+                    'distrito_id' => $user->distrito_id,
                 ]
             );
+
 
             // Calcular subtotal
             $precioUnit = $producto->precio;
@@ -58,12 +70,14 @@ class PedidoController extends Controller
             DetallePedido::create([
                 'pedido_id' => $pedido->id,
                 'producto_codigo' => $producto->codigo,
-                'talla' => $request->talla,
-                'color' => $request->color,
                 'cantidad' => $request->cantidad,
                 'precio_unit' => $precioUnit,
                 'subtotal' => $subtotal,
+                'variante_id' => $variante->id,
             ]);
+
+
+
 
             // Actualizar total del pedido
             $pedido->total += $subtotal;
@@ -78,14 +92,16 @@ class PedidoController extends Controller
         }
     }
 
+
     public function index()
     {
         $user = Auth::user();
 
         $pedido = Pedido::where('cliente_id', $user->cliente_id)
-            ->where('estado', 'pendiente')
-            ->with('detalles.producto')
+            ->where('estado_id', 1)
+            ->with('detalles.producto', 'detalles.variante')
             ->first();
+
 
         return view('carrito.index', compact('pedido'));
     }
