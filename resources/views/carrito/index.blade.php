@@ -21,7 +21,6 @@
                         alt="{{ $producto->nombre }}"
                         class="img-fluid rounded border"
                         style="width: 150px; height: 150px; object-fit: cover;">
-
                 </div>
                 <div class="col-md-9">
                     <h5 class="mb-2">{{ $producto->nombre }}</h5>
@@ -33,17 +32,18 @@
                             <div>
                                 <span class="badge bg-dark">Color: {{ $detalle->variante->color }}</span>
                                 <span class="badge bg-secondary">Talla: {{ $detalle->variante->talla }}</span>
-
                             </div>
                             <div>
                                 <form action="{{ route('carrito.actualizar', $detalle->id) }}" method="POST" class="d-inline-flex align-items-center me-2">
-                                    @csrf @method('PUT')
+                                    @csrf
+                                    @method('PUT')
                                     <input type="number" name="cantidad" value="{{ $detalle->cantidad }}" min="1"
                                         class="form-control form-control-sm me-1" style="width: 70px;">
                                     <button class="btn btn-sm btn-outline-secondary">Actualizar</button>
                                 </form>
                                 <form action="{{ route('carrito.eliminar', $detalle->id) }}" method="POST" class="d-inline">
-                                    @csrf @method('DELETE')
+                                    @csrf
+                                    @method('DELETE')
                                     <button class="btn btn-sm btn-outline-danger">Eliminar</button>
                                 </form>
                             </div>
@@ -71,4 +71,31 @@
     </div>
     @endif
 </main>
+
+{{-- ✅ Toast de éxito o error --}}
+@if(session('success') || session('error'))
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11000;">
+    <div id="carritoToast" class="toast align-items-center {{ session('success') ? 'text-bg-success' : 'text-bg-danger' }} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                {{ session('success') ?? session('error') }}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const toastEl = document.getElementById('carritoToast');
+        if (toastEl) {
+            const toast = new bootstrap.Toast(toastEl, {
+                delay: 3000,
+                autohide: true
+            });
+            toast.show();
+        }
+    });
+</script>
+@endif
 @endsection

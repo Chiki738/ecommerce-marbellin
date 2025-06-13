@@ -62,7 +62,7 @@ class AuthController extends Controller
             $user->save();
 
             Auth::login($user);
-            return redirect('/')->with('success', 'Cuenta creada correctamente');
+            return redirect()->route('login')->with('success', 'Cuenta creada correctamente');
         } catch (\Exception $e) {
             return back()->with('error', 'Error al registrarse. Intente nuevamente.');
         }

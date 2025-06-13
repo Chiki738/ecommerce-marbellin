@@ -169,12 +169,12 @@
         </div>
     </div>
 
-    @if(session('carrito_agregado') && auth()->check())
+    @if(session('success') && auth()->check())
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11000;">
-        <div id="successToast" class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+        <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
                 <div class="toast-body">
-                    Agregado correctamente al carrito
+                    {{ session('success') }}
                 </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
             </div>
@@ -185,7 +185,10 @@
         document.addEventListener('DOMContentLoaded', () => {
             const toastEl = document.getElementById('successToast');
             if (toastEl) {
-                const toast = new bootstrap.Toast(toastEl);
+                const toast = new bootstrap.Toast(toastEl, {
+                    delay: 3000, // 3 segundos
+                    autohide: true
+                });
                 toast.show();
             }
         });
