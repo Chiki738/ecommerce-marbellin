@@ -16,6 +16,18 @@
             </div>
 
             <div class="col-md-8 p-4 position-relative">
+                @if(session('success'))
+                <div class="alert alert-success text-center" role="alert">
+                    {{ session('success') }}
+                </div>
+                @endif
+
+                @if(session('error'))
+                <div class="alert alert-danger text-center" role="alert">
+                    {{ session('error') }}
+                </div>
+                @endif
+
                 {{-- Aquí se mostrará el formulario de login o registro --}}
                 @yield('formContent')
             </div>

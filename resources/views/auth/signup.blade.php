@@ -5,22 +5,6 @@
     @csrf
     <h3 class="text-center mb-3">Registrarse</h3>
 
-    @if(session('success'))
-    <div class="alert alert-success" role="alert">
-        {{ session('success') }}
-    </div>
-    @endif
-
-    @if($errors->any())
-    <div class="alert alert-danger" role="alert">
-        <ul class="mb-0">
-            @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
-
     <div class="row g-3">
         <div class="col-sm-6 form-floating">
             <input type="text" name="nombre" class="form-control" id="nombre" placeholder="Nombre" required>

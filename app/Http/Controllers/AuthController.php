@@ -26,18 +26,13 @@ class AuthController extends Controller
             return redirect()->intended('/')->with('success', 'Bienvenido como usuario');
         }
 
-        // Login admin (guard admin)
         if (Auth::guard('admin')->attempt($credentials)) {
             $request->session()->regenerate();
             return redirect()->intended('/admin')->with('success', 'Bienvenido administrador');
         }
 
-        return back()->withErrors([
-            'email' => 'Las credenciales no coinciden.',
-        ])->onlyInput('email');
+        return back()->with('error', 'Correo o contraseña incorrectos.')->onlyInput('email');
     }
-
-
 
     public function signup()
     {
@@ -56,18 +51,21 @@ class AuthController extends Controller
             'direccion' => 'required|string|max:255',
         ]);
 
-        $user = new User();
-        $user->nombre = $request->nombre;
-        $user->apellido = $request->apellido;
-        $user->email = $request->email;
-        $user->password = Hash::make($request->password);
-        $user->distrito_id = $request->distrito;
-        $user->direccion = $request->direccion;
-        $user->save();
+        try {
+            $user = new User();
+            $user->nombre = $request->nombre;
+            $user->apellido = $request->apellido;
+            $user->email = $request->email;
+            $user->password = Hash::make($request->password);
+            $user->distrito_id = $request->distrito;
+            $user->direccion = $request->direccion;
+            $user->save();
 
-        Auth::login($user); // Opcional: loguear al usuario automáticamente
-
-        return redirect('/')->with('success', 'Registro exitoso');
+            Auth::login($user);
+            return redirect('/')->with('success', 'Cuenta creada correctamente');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error al registrarse. Intente nuevamente.');
+        }
     }
 
     public function logout(Request $request)

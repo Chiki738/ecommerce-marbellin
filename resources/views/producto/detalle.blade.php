@@ -98,7 +98,7 @@
         <div class="row">
             <div class="col-md-6 d-flex justify-content-center">
                 <img
-                    class="border border-dark border-2 rounded-3 shadow-lg"
+                    class="border border-dark border-2 rounded-3 shadow-lg mb-4"
                     src="{{ $producto->imagen }}"
                     alt="{{ $producto->nombre }}"
                     style="width:100%; aspect-ratio: 1 / 1; object-fit: cover;">
