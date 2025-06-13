@@ -101,9 +101,11 @@
             </ul>
 
             {{-- Buscador --}}
-            <form class="d-flex" role="search" onsubmit="event.preventDefault(); /* agregar lógica aquí */">
-                <input class="form-control me-2" type="search" placeholder="Buscar" aria-label="Buscar">
+            <form class="d-flex buscador-autocompletado position-relative" role="search" onsubmit="event.preventDefault();">
+                <input id="buscador-input" class="form-control me-2" type="search" placeholder="Buscar" aria-label="Buscar" autocomplete="off">
+                <div id="resultados-autocompletado"></div>
             </form>
+
 
             {{-- Login/Logout --}}
             @guest
@@ -170,11 +172,11 @@
         transition: all 0.3s ease;
     }
 
-    #autocompleteResults {
+    /* #autocompleteResults {
         max-height: 200px;
         overflow-y: auto;
         background: white;
-    }
+    } */
 
     #loading-overlay {
         position: fixed;
@@ -188,4 +190,73 @@
         align-items: center;
         z-index: 1100;
     }
+
+    #buscador-input {
+        z-index: 1;
+        /* El input siempre arriba */
+    }
+
+    #resultados-autocompletado {
+        position: absolute;
+        top: calc(100% + 4px);
+        /* Justo debajo del input */
+        left: 0;
+        width: 100%;
+        /* Igual ancho que el input */
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        max-height: 220px;
+        overflow-y: auto;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+        display: none;
+    }
+
+
+    .buscador-autocompletado {
+        position: relative;
+    }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.querySelector('.buscador-autocompletado input');
+        const resultados = document.getElementById('resultados-autocompletado');
+
+        input.addEventListener('input', function() {
+            const query = this.value.trim();
+
+            if (query.length < 2) {
+                resultados.style.display = 'none';
+                resultados.innerHTML = '';
+                return;
+            }
+
+            fetch(`/buscar?query=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        resultados.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
+                    } else {
+                        resultados.innerHTML = data.map(p => `
+                            <a href="/producto/${p.codigo}" class="d-flex align-items-center p-2 text-decoration-none text-dark border-bottom">
+                                <img src="${p.imagen}" alt="${p.nombre}" class="me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                <div>
+                                    <strong>${p.nombre}</strong><br>
+                                    <small>S/ ${parseFloat(p.precio).toFixed(2)}</small>
+                                </div>
+                            </a>
+                        `).join('');
+                    }
+                    resultados.style.display = 'block';
+                });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.buscador-autocompletado')) {
+                resultados.style.display = 'none';
+            }
+        });
+    });
+</script>

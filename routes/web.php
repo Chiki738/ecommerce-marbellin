@@ -54,3 +54,4 @@ Route::middleware('auth')->group(function () {
 
 // Autocomplete para productos
 Route::get('/productos/autocomplete', [ProductoController::class, 'autocomplete'])->name('productos.autocomplete');
+Route::get('/buscar', [ProductoController::class, 'autocomplete']);

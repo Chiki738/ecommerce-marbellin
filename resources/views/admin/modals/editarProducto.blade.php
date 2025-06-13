@@ -19,12 +19,11 @@
                     <input type="number" step="0.01" name="precio" id="precio" class="form-control mb-2" required>
 
                     <label for="categoria">Categoría</label>
-                    <select name="categoria" id="categoria" class="form-control mb-2" required>
+                    <select name="categoria_id" id="categoria" class="form-control mb-2" required>
                         <option value="" disabled>Selecciona una categoría</option>
-                        <option value="bikinis">Bikini</option>
-                        <option value="cacheteros">Cachetero</option>
-                        <option value="semi_hilos">Semi Hilos</option>
-                        <option value="otros_productos">Otros Productos</option>
+                        @foreach ($categorias as $categoria)
+                        <option value="{{ $categoria->categoria_id }}">{{ $categoria->nombre }}</option>
+                        @endforeach
                     </select>
 
                     <label for="descripcion">Descripción</label>
@@ -63,7 +62,7 @@
             form.codigo.value = codigo;
             form.nombre.value = nombre;
             form.precio.value = precio;
-            form.categoria.value = categoria;
+            form.categoria.value = categoria; // Asegúrate de que "categoria" sea el ID, no el nombre
             form.descripcion.value = descripcion;
 
             const preview = document.querySelector('#previewImagen img');

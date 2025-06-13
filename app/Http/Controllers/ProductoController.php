@@ -209,57 +209,57 @@ class ProductoController extends Controller
         return view('producto.detalle', compact('producto', 'categorias')); // 👉 Incluye $categorias en la vista
     }
 
-    // public function autocomplete(Request $request)
-    // {
-    //     $queryOriginal = $request->input('query');
-    //     $query = $this->normalizar($queryOriginal);
-    //     $terminos = explode(' ', $query);
+    public function autocomplete(Request $request)
+    {
+        $queryOriginal = $request->input('query');
+        $query = $this->normalizar($queryOriginal);
+        $terminos = explode(' ', $query);
 
-    //     // Calcular puntaje
-    //     $productos = Producto::all()->map(function ($producto) use ($query, $terminos) {
-    //         $nombreNormalizado = $this->normalizar($producto->nombre);
-    //         $puntaje = 0;
+        // Calcular puntaje
+        $productos = Producto::all()->map(function ($producto) use ($query, $terminos) {
+            $nombreNormalizado = $this->normalizar($producto->nombre);
+            $puntaje = 0;
 
-    //         if ($nombreNormalizado === $query) {
-    //             $puntaje = 3;
-    //         } elseif (str_contains($nombreNormalizado, $query)) {
-    //             $puntaje = 2;
-    //         } elseif (collect($terminos)->every(fn($p) => str_contains($nombreNormalizado, $p))) {
-    //             $puntaje = 1;
-    //         }
+            if ($nombreNormalizado === $query) {
+                $puntaje = 3;
+            } elseif (str_contains($nombreNormalizado, $query)) {
+                $puntaje = 2;
+            } elseif (collect($terminos)->every(fn($p) => str_contains($nombreNormalizado, $p))) {
+                $puntaje = 1;
+            }
 
-    //         return [
-    //             'producto' => $producto,
-    //             'puntaje' => $puntaje,
-    //         ];
-    //     });
+            return [
+                'producto' => $producto,
+                'puntaje' => $puntaje,
+            ];
+        });
 
-    //     // Filtrar por el puntaje más alto
-    //     $puntajeMaximo = $productos->max('puntaje');
+        // Filtrar por el puntaje más alto
+        $puntajeMaximo = $productos->max('puntaje');
 
-    //     $filtrados = $productos
-    //         ->filter(fn($item) => $item['puntaje'] === $puntajeMaximo && $item['puntaje'] > 0)
-    //         ->unique(fn($item) => $item['producto']->nombre)
-    //         ->take(5)
-    //         ->values();
+        $filtrados = $productos
+            ->filter(fn($item) => $item['puntaje'] === $puntajeMaximo && $item['puntaje'] > 0)
+            ->unique(fn($item) => $item['producto']->nombre)
+            ->take(5)
+            ->values();
 
-    //     return response()->json($filtrados->map(function ($item) {
-    //         $producto = $item['producto'];
-    //         return [
-    //             'codigo' => $producto->codigo,
-    //             'nombre' => $producto->nombre,
-    //             'precio' => $producto->precio,
-    //             'imagen' => $producto->imagen,
-    //         ];
-    //     }));
-    // }
+        return response()->json($filtrados->map(function ($item) {
+            $producto = $item['producto'];
+            return [
+                'codigo' => $producto->codigo,
+                'nombre' => $producto->nombre,
+                'precio' => $producto->precio,
+                'imagen' => $producto->imagen,
+            ];
+        }));
+    }
 
-    // private function normalizar($cadena)
-    // {
-    //     return strtolower(preg_replace(
-    //         '~[^\pL\d]+~u',
-    //         ' ',
-    //         iconv('UTF-8', 'ASCII//TRANSLIT', $cadena)
-    //     ));
-    // }
+    private function normalizar($cadena)
+    {
+        return strtolower(preg_replace(
+            '~[^\pL\d]+~u',
+            ' ',
+            iconv('UTF-8', 'ASCII//TRANSLIT', $cadena)
+        ));
+    }
 }
