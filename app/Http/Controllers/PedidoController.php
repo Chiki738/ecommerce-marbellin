@@ -15,8 +15,12 @@ class PedidoController extends Controller
     {
         // Si no está logueado, redirige al login
         if (!Auth::check()) {
+            if ($request->ajax()) {
+                return response()->json(['error' => 'Debes iniciar sesión'], 401);
+            }
             return redirect()->route('login');
         }
+
 
         // Validar datos del formulario
         $request->validate([
@@ -30,29 +34,26 @@ class PedidoController extends Controller
             $user = Auth::user();
             Log::info("Cliente autenticado: " . $user->cliente_id);
 
-            // Obtener producto
             $producto = Producto::where('codigo', $request->producto_codigo)->firstOrFail();
 
-            // Verificar si existe la variante y tiene suficiente stock
             $variante = \App\Models\VarianteProducto::where([
                 ['producto_codigo', '=', $request->producto_codigo],
                 ['talla', '=', $request->talla],
                 ['color', '=', $request->color],
             ])->first();
 
-
             if (!$variante || $variante->cantidad < $request->cantidad) {
+                if ($request->ajax()) {
+                    return response()->json(['error' => 'La combinación de talla y color no está disponible o no hay suficiente stock.'], 422);
+                }
                 return redirect()->back()->with('error', 'La combinación de talla y color no está disponible o no hay suficiente stock.');
             }
 
-
-            // Obtener distrito y provincia para envío
             $distrito = $user->distrito;
             $provincia = $distrito?->provincia;
 
-            // Obtener o crear pedido pendiente para el cliente
             $pedido = Pedido::firstOrCreate(
-                ['cliente_id' => $user->cliente_id, 'estado_id' => 1], // ✅ 1 = pendiente
+                ['cliente_id' => $user->cliente_id, 'estado_id' => 1],
                 [
                     'fecha' => now(),
                     'total' => 0,
@@ -61,37 +62,49 @@ class PedidoController extends Controller
                 ]
             );
 
-
-            // Calcular subtotal
             $precioUnit = $producto->precio;
             $subtotal = $precioUnit * $request->cantidad;
 
-            // Crear detalle de pedido (producto en carrito)
-            DetallePedido::create([
-                'pedido_id' => $pedido->id,
-                'producto_codigo' => $producto->codigo,
-                'cantidad' => $request->cantidad,
-                'precio_unit' => $precioUnit,
-                'subtotal' => $subtotal,
-                'variante_id' => $variante->id,
-            ]);
+            $detalleExistente = DetallePedido::where('pedido_id', $pedido->id)
+                ->where('producto_codigo', $producto->codigo)
+                ->where('variante_id', $variante->id)
+                ->first();
 
+            if ($detalleExistente) {
+                $detalleExistente->cantidad += $request->cantidad;
+                $detalleExistente->subtotal += $precioUnit * $request->cantidad;
+                $detalleExistente->save();
+            } else {
+                DetallePedido::create([
+                    'pedido_id' => $pedido->id,
+                    'producto_codigo' => $producto->codigo,
+                    'cantidad' => $request->cantidad,
+                    'precio_unit' => $precioUnit,
+                    'subtotal' => $subtotal,
+                    'variante_id' => $variante->id,
+                ]);
+            }
 
-
-
-            // Actualizar total del pedido
             $pedido->total += $subtotal;
             $pedido->save();
 
             Log::info("Producto agregado al pedido ID: " . $pedido->id);
 
+            if ($request->ajax()) {
+                return response()->json(['message' => 'Producto agregado al carrito']);
+            }
+
             return redirect()->back()->with('success', 'Producto agregado al carrito');
         } catch (\Exception $e) {
             Log::error("Error al agregar al carrito: " . $e->getMessage());
+
+            if ($request->ajax()) {
+                return response()->json(['error' => 'Ocurrió un error al agregar el producto'], 500);
+            }
+
             return redirect()->back()->with('error', 'Ocurrió un error al agregar el producto');
         }
     }
-
 
     public function index()
     {
@@ -138,5 +151,25 @@ class PedidoController extends Controller
         $pedido->save();
 
         return redirect()->route('carrito')->with('success', 'Producto eliminado del carrito');
+    }
+
+    public function vaciar()
+    {
+        $user = Auth::user();
+
+        $pedido = Pedido::where('cliente_id', $user->cliente_id)
+            ->where('estado_id', 1)
+            ->with('detalles')
+            ->first();
+
+        if ($pedido) {
+            foreach ($pedido->detalles as $detalle) {
+                $detalle->delete();
+            }
+            $pedido->total = 0;
+            $pedido->save();
+        }
+
+        return redirect()->route('carrito')->with('success', 'Carrito vaciado correctamente');
     }
 }

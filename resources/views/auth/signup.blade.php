@@ -1,6 +1,15 @@
 @extends('auth.acceso')
 
 @section('formContent')
+@if ($errors->any())
+<div class="alert alert-danger mt-3">
+    <ul class="mb-0">
+        @foreach ($errors->all() as $error)
+        <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
 <form id="formSign" action="{{ route('signup.post') }}" method="POST" class="w-100 needs-validation p-sm-4 p-1" novalidate>
     @csrf
     <h3 class="text-center mb-3">Registrarse</h3>

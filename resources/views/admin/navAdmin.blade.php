@@ -11,12 +11,20 @@
         <div class="collapse navbar-collapse d-none d-lg-flex" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('admin.productosAdmin') }}">Productos</a>
+                    <a class="nav-link" href="{{ route('admin.productosAdmin') }}"><i class="bi bi-box me-1"></i>Productos</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('admin.dashboardAdmin') }}">Dashboard</a>
+                    <a class="nav-link" href="{{ route('admin.dashboardAdmin') }}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
                 </li>
-
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('admin.pedidosAdmin') }}"><i class="bi bi-list-check me-1"></i>Pedidos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('admin.dashboardAdmin') }}"><i class="bi bi-people me-1"></i>Clientes</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('admin.dashboardAdmin') }}"><i class="bi bi-exclamation-triangle me-1"></i>Reclamos</a>
+                </li>
             </ul>
 
             @guest

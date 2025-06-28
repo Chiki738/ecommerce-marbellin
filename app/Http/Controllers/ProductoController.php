@@ -139,6 +139,7 @@ class ProductoController extends Controller
         $colores = VarianteProducto::select('color')->distinct()->pluck('color');
         $tallas = VarianteProducto::select('talla')->distinct()->pluck('talla');
         $buscar = $request->input('buscar');
+
         $query = Producto::query();
 
         if ($buscar) {
@@ -152,10 +153,11 @@ class ProductoController extends Controller
             });
         }
 
-        $productos = $query->with('categoria')->get();
+        $productos = $query->with('categoria')->paginate(6); // ✅ Ahora sí con paginación
 
         return view('producto.productos', compact('productos', 'categorias', 'colores', 'tallas'));
     }
+
 
     public function filtrar(Request $request)
     {
@@ -194,7 +196,7 @@ class ProductoController extends Controller
             if (!empty($tallas)) {
                 $query->whereIn('talla', $tallas);
             }
-        }])->get();
+        }])->paginate(6);
 
         $categorias = Categoria::all(); // Asegúrate de importar el modelo
 

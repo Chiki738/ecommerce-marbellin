@@ -17,6 +17,7 @@ class VarianteController extends Controller
         $variante->cantidad = $request->cantidad;
         $variante->save();
 
-        return redirect()->back()->with('success', 'Cantidad actualizada correctamente.');
+        // ✅ Esto permite a JavaScript continuar y actualizar colores correctamente
+        return response()->json(['message' => 'Cantidad actualizada']);
     }
 }

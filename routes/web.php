@@ -1,11 +1,13 @@
 <?php
 
+// web.php
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UbigeoController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\VarianteController;
 use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\PagoController;
 
 // Ruta de inicio (solo presentación visual)
 Route::get('/', function () {
@@ -50,8 +52,21 @@ Route::middleware('auth')->group(function () {
     Route::put('/carrito/actualizar/{id}', [PedidoController::class, 'actualizarCantidad'])->name('carrito.actualizar');
     Route::delete('/carrito/eliminar/{id}', [PedidoController::class, 'eliminar'])->name('carrito.eliminar');
     Route::post('/carrito/checkout', [PedidoController::class, 'checkout'])->name('carrito.checkout');
+    Route::delete('/carrito/vaciar', [PedidoController::class, 'vaciar'])->name('carrito.vaciar');
+    // Ruta AJAX para actualizar pedido y mostrar mensaje
+    Route::get('/pago/exito', [PagoController::class, 'exito'])->name('pago.exito');
 });
 
 // Autocomplete para productos
 Route::get('/productos/autocomplete', [ProductoController::class, 'autocomplete'])->name('productos.autocomplete');
 Route::get('/buscar', [ProductoController::class, 'autocomplete']);
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    });
+
+    Route::get('/pedidos', function () {
+        return view('admin.pedidosAdmin');
+    })->name('admin.pedidosAdmin'); // 👈 ESTE ES EL CAMBIO CLAVE
+});
