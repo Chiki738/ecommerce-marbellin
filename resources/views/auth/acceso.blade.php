@@ -18,16 +18,8 @@
                 <a href="{{ url('/') }}" class="btn btn-light w-100 mt-4">← Regresar al inicio</a>
             </div>
 
-            {{-- Contenido del formulario (login o registro) --}}
+            {{-- Contenido del formulario --}}
             <div class="col-md-8 p-4 position-relative">
-                @foreach (['success', 'error'] as $type)
-                @if (session($type))
-                <div class="alert alert-{{ $type === 'success' ? 'success' : 'danger' }} text-center" role="alert">
-                    {{ session($type) }}
-                </div>
-                @endif
-                @endforeach
-
                 @yield('formContent')
             </div>
         </div>

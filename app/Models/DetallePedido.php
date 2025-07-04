@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class DetallePedido extends Model
 {
     protected $table = 'detalle_pedido';
+
     protected $fillable = [
         'pedido_id',
         'producto_codigo',
@@ -15,12 +16,12 @@ class DetallePedido extends Model
         'cantidad',
         'precio_unit',
         'subtotal',
-        'variante_id', // ✅ aquí también
+        'variante_id',
     ];
 
     public function pedido()
     {
-        return $this->belongsTo(Pedido::class, 'pedido_id');
+        return $this->belongsTo(Pedido::class);
     }
 
     public function producto()
@@ -30,6 +31,6 @@ class DetallePedido extends Model
 
     public function variante()
     {
-        return $this->belongsTo(\App\Models\VarianteProducto::class, 'variante_id');
+        return $this->belongsTo(VarianteProducto::class, 'variante_id');
     }
 }

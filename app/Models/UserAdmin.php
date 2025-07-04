@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 class UserAdmin extends Authenticatable implements MustVerifyEmail
 {
@@ -13,18 +13,9 @@ class UserAdmin extends Authenticatable implements MustVerifyEmail
 
     protected $table = 'users_admin';
 
-    protected $fillable = [
-        'email',
-        'password',
-        'rol',
-    ];
+    protected $fillable = ['email', 'password', 'rol'];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ['password', 'remember_token'];
 
-    protected $casts = [
-        'password' => 'hashed',
-    ];
+    protected $casts = ['password' => 'hashed'];
 }

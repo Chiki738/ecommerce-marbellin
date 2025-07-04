@@ -7,20 +7,29 @@
 
     @php
     $campos = [
-    ['name' => 'email', 'type' => 'email', 'label' => 'Correo electrónico', 'placeholder' => 'correo@example.com', 'invalid' => 'Ingresa un correo válido.'],
-    ['name' => 'password', 'type' => 'password', 'label' => 'Contraseña', 'placeholder' => 'Contraseña', 'invalid' => 'La contraseña es obligatoria.']
+    'email' => ['Correo electrónico', 'email', 'correo@example.com', 'Ingresa un correo válido.'],
+    'password' => ['Contraseña', 'password', 'Contraseña', 'La contraseña es obligatoria.']
     ];
     @endphp
 
-    @foreach ($campos as $campo)
+    @foreach ($campos as $name => [$label, $type, $placeholder, $invalid])
     <div class="form-floating mb-{{ $loop->last ? 4 : 3 }}">
-        <input type="{{ $campo['type'] }}" name="{{ $campo['name'] }}" id="login{{ ucfirst($campo['name']) }}"
-            class="form-control" placeholder="{{ $campo['placeholder'] }}" required>
-        <label for="login{{ ucfirst($campo['name']) }}">{{ $campo['label'] }}</label>
-        <div class="invalid-feedback">{{ $campo['invalid'] }}</div>
+        <input
+            type="{{ $type }}"
+            name="{{ $name }}"
+            id="login{{ ucfirst($name) }}"
+            class="form-control"
+            placeholder="{{ $placeholder }}"
+            required>
+        <label for="login{{ ucfirst($name) }}">{{ $label }}</label>
+        <div class="invalid-feedback">{{ $invalid }}</div>
     </div>
     @endforeach
 
-    <button class="btn btn-success w-100 py-2">Entrar</button>
+    <button type="submit" class="btn btn-success w-100 py-2">Entrar</button>
 </form>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/login.js') }}"></script>
+@endpush

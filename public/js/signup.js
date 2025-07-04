@@ -2,16 +2,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const provinciaSelect = document.getElementById("provincia");
     const distritoSelect = document.getElementById("distrito");
     const emailInput = document.getElementById("email");
+    const form = document.getElementById("formSign");
 
     let correoValido = false;
 
-    // Mostrar ayuda para el correo
+    // Mostrar ayuda visual del correo
     const emailHelp = Object.assign(document.createElement("small"), {
         className: "text-danger d-none",
     });
     emailInput.parentNode.appendChild(emailHelp);
 
-    // Validación de correo con API externa
+    // Validar correo con API externa
     emailInput.addEventListener("blur", async () => {
         const email = emailInput.value.trim();
         if (!email) return;
@@ -40,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Cargar distritos al cambiar provincia
+    // Cargar distritos al seleccionar provincia
     provinciaSelect.addEventListener("change", async () => {
         const provinciaId = provinciaSelect.value;
         distritoSelect.innerHTML = `<option value="">${
@@ -66,21 +67,68 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Validación de formulario incluyendo el correo
-    document.querySelectorAll(".needs-validation").forEach((form) => {
-        form.addEventListener("submit", (e) => {
-            if (!form.checkValidity() || !correoValido) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!correoValido) {
-                    emailHelp.textContent =
-                        "Debe ingresar un correo válido de Gmail";
-                    emailHelp.classList.remove("d-none");
-                }
-            } else {
-                emailHelp.classList.add("d-none");
+    // Validación completa del formulario y envío por AJAX
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        form.classList.add("was-validated");
+
+        if (!form.checkValidity() || !correoValido) {
+            let mensaje = "";
+            if (!form.checkValidity())
+                mensaje += "Completa todos los campos correctamente.<br>";
+            if (!correoValido) {
+                mensaje += "Debes ingresar un correo válido de Gmail.";
+                emailHelp.classList.remove("d-none");
             }
-            form.classList.add("was-validated");
-        });
+
+            Swal.fire({
+                icon: "error",
+                title: "Error al registrar",
+                html: mensaje,
+                confirmButtonText: "Entendido",
+            });
+            return;
+        }
+
+        const formData = new FormData(form);
+
+        try {
+            const res = await fetch("/acceso/signup", {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": document.querySelector(
+                        'meta[name="csrf-token"]'
+                    ).content,
+                },
+                body: formData,
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                Swal.fire({
+                    icon: "success",
+                    title: "Registro exitoso",
+                    text: "Verifica tu correo antes de continuar.",
+                    confirmButtonText: "Aceptar",
+                }).then(() => {
+                    window.location.href = data.redirect;
+                });
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Errores en el formulario",
+                    html: Object.values(data.errors).flat().join("<br>"),
+                    confirmButtonText: "Entendido",
+                });
+            }
+        } catch (err) {
+            Swal.fire({
+                icon: "error",
+                title: "Error inesperado",
+                text: "No se pudo completar el registro.",
+            });
+        }
     });
 });

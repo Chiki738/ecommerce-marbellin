@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\VarianteProducto;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Producto extends Model
 {
@@ -12,22 +12,29 @@ class Producto extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = ['codigo', 'nombre', 'precio', 'descripcion', 'imagen', 'categoria_id'];
+    protected $fillable = [
+        'codigo',
+        'nombre',
+        'precio',
+        'descripcion',
+        'imagen',
+        'categoria_id',
+    ];
 
     public function variantes(): HasMany
     {
-        return $this->hasMany(VarianteProducto::class, 'producto_codigo', 'codigo');
+        return $this->hasMany(VarianteProducto::class, 'producto_codigo');
     }
 
-    protected static function booted()
+    public function categoria(): BelongsTo
     {
-        static::deleting(function ($producto) {
+        return $this->belongsTo(Categoria::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (self $producto) {
             $producto->variantes()->delete();
         });
-    }
-
-    public function categoria()
-    {
-        return $this->belongsTo(Categoria::class, 'categoria_id', 'categoria_id');
     }
 }

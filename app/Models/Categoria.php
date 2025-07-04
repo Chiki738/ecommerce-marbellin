@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Categoria extends Model
 {
     protected $table = 'categorias';
-    protected $primaryKey = 'categoria_id'; // ✅ ahora está dentro de la clase
+    protected $primaryKey = 'categoria_id';
 
     public function productos()
     {

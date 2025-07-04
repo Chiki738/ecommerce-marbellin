@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\DetallePedido;
 
 class Pedido extends Model
 {
     protected $table = 'pedidos';
+
     protected $fillable = [
         'cliente_id',
         'fecha',
@@ -16,9 +18,8 @@ class Pedido extends Model
         'estado_id',
     ];
 
-    // App\Models\Pedido.php
     public function detalles()
     {
-        return $this->hasMany(\App\Models\DetallePedido::class, 'pedido_id');
+        return $this->hasMany(DetallePedido::class);
     }
 }

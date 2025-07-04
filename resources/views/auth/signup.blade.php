@@ -1,18 +1,7 @@
 @extends('auth.acceso')
 
 @section('formContent')
-
-@if ($errors->any())
-<div class="alert alert-danger mt-3">
-    <ul class="mb-0">
-        @foreach ($errors->all() as $error)
-        <li>{{ $error }}</li>
-        @endforeach
-    </ul>
-</div>
-@endif
-
-<form id="formSign" action="{{ route('signup.post') }}" method="POST" class="needs-validation p-3 p-sm-4" novalidate>
+<form id="formSign" class="needs-validation p-3 p-sm-4" novalidate>
     @csrf
     <h3 class="text-center mb-3">Registrarse</h3>
 
@@ -42,6 +31,7 @@
         @endforeach
     </div>
 
+    {{-- Provincia y Distrito --}}
     <div class="row mt-3">
         <div class="col-12">
             <label for="provincia" class="form-label">Provincia</label>
