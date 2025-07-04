@@ -22,4 +22,9 @@ class Pedido extends Model
     {
         return $this->hasMany(DetallePedido::class);
     }
+
+    public function cliente()
+    {
+        return $this->belongsTo(User::class, 'cliente_id', 'cliente_id');
+    }
 }

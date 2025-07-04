@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ComprobantePagoMail;
+use App\Models\{Pedido, User};
 
 class PagoController extends Controller
 {
@@ -16,7 +19,7 @@ class PagoController extends Controller
         }
 
         // Buscar el pedido y actualizar estado
-        $pedido = \App\Models\Pedido::with('detalles.variante')->find($pedidoId);
+        $pedido = Pedido::with(['detalles.variante', 'detalles.producto', 'cliente'])->find($pedidoId);
 
         if ($pedido && $pedido->estado_id == 1) { // 1 = pendiente
             $pedido->estado_id = 2; // 2 = procesando
@@ -32,6 +35,11 @@ class PagoController extends Controller
                 }
             }
 
+            // Enviar comprobante al cliente
+            if ($pedido->cliente && $pedido->cliente->email) {
+                Mail::to($pedido->cliente->email)->send(new ComprobantePagoMail($pedido));
+            }
+
             return response()->json(['success' => true]);
         }
 
@@ -40,7 +48,7 @@ class PagoController extends Controller
 
     public function verificarStock($pedidoId)
     {
-        $pedido = \App\Models\Pedido::with('detalles.variante', 'detalles.producto')->find($pedidoId);
+        $pedido = Pedido::with('detalles.variante', 'detalles.producto')->find($pedidoId);
 
         if (!$pedido) {
             return response()->json(['success' => false, 'message' => 'Pedido no encontrado.']);
