@@ -6,16 +6,15 @@ use App\Models\User;
 use App\Models\UserAdmin;
 use App\Models\Provincia;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{
-    Auth,
-    Session,
-    Hash,
-    Log,
-    Mail,
-    Validator
-};
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Carbon;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Mail;
 use App\Mail\Codigo2FAMail;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
@@ -28,15 +27,15 @@ class AuthController extends Controller
     {
         $credentials = $request->only('email', 'password');
 
+        // Login de usuario
         if (Auth::guard('web')->attempt($credentials)) {
             $authUser = Auth::user();
             $user = User::find($authUser->cliente_id);
 
             $codigo = rand(100000, 999999);
-            $user->update([
-                'two_factor_code' => $codigo,
-                'two_factor_expires_at' => now()->addMinutes(10),
-            ]);
+            $user->two_factor_code = $codigo;
+            $user->two_factor_expires_at = now()->addMinutes(10);
+            $user->save();
 
             Mail::to($user->email)->send(new Codigo2FAMail($codigo));
 
@@ -50,15 +49,15 @@ class AuthController extends Controller
             return redirect()->route('2fa.verify');
         }
 
+        // Login de administrador
         if (Auth::guard('admin')->attempt($credentials)) {
-            $authAdmin = Auth::guard('admin')->user();
-            $admin = UserAdmin::find($authAdmin->id);
+            $adminUser = Auth::guard('admin')->user();
+            $admin = UserAdmin::find($adminUser->id);
 
             $codigo = rand(100000, 999999);
-            $admin->update([
-                'two_factor_code' => $codigo,
-                'two_factor_expires_at' => now()->addMinutes(10),
-            ]);
+            $admin->two_factor_code = $codigo;
+            $admin->two_factor_expires_at = now()->addMinutes(10);
+            $admin->save();
 
             Mail::to($admin->email)->send(new Codigo2FAMail($codigo));
 
@@ -82,9 +81,10 @@ class AuthController extends Controller
 
         $guard = session('2fa_guard');
         $id = session('2fa_id');
-        $model = $guard === 'admin' ? UserAdmin::class : User::class;
 
-        $user = $model::find($id);
+        $user = $guard === 'admin'
+            ? UserAdmin::find($id)
+            : User::find($id);
 
         if (
             !$user ||
@@ -97,10 +97,9 @@ class AuthController extends Controller
             return redirect()->route('login');
         }
 
-        $user->update([
-            'two_factor_code' => null,
-            'two_factor_expires_at' => null,
-        ]);
+        $user->two_factor_code = null;
+        $user->two_factor_expires_at = null;
+        $user->save();
 
         Auth::guard($guard)->login($user);
         session()->forget('2fa_id');
@@ -112,7 +111,8 @@ class AuthController extends Controller
 
     public function signup()
     {
-        return view('auth.signup', ['provincias' => Provincia::all()]);
+        $provincias = Provincia::all();
+        return view('auth.signup', compact('provincias'));
     }
 
     public function signupPost(Request $request)
@@ -150,6 +150,7 @@ class AuthController extends Controller
             return response()->json(['errors' => ['general' => ['Error inesperado. Intenta nuevamente.']]], 500);
         }
     }
+
 
     public function logout(Request $request)
     {
