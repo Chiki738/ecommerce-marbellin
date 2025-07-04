@@ -2,29 +2,34 @@
     <div class="container-fluid">
         <h1 class="display-6 fw-bold me-3">Administrador</h1>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar"
-            aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <!-- Navbar grande -->
         <div class="collapse navbar-collapse d-none d-lg-flex" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('admin.productosAdmin') }}"><i class="bi bi-box me-1"></i>Productos</a>
+                    <a class="nav-link {{ Request::is('admin/productos') ? 'fw-bold' : '' }}" href="{{ route('admin.productosAdmin') }}">
+                        <i class="bi bi-box me-1"></i>Productos
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('admin.dashboardAdmin') }}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+                    <a class="nav-link {{ Request::is('admin/dashboard') ? 'fw-bold' : '' }}" href="{{ route('admin.dashboardAdmin') }}">
+                        <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('admin.pedidosAdmin') }}"><i class="bi bi-list-check me-1"></i>Pedidos</a>
+                    <a class="nav-link {{ Request::is('admin/pedidos') ? 'fw-bold' : '' }}" href="{{ route('admin.pedidosAdmin') }}">
+                        <i class="bi bi-list-check me-1"></i>Pedidos
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('admin.dashboardAdmin') }}"><i class="bi bi-people me-1"></i>Clientes</a>
+                    <a class="nav-link {{ Request::is('admin/clientes') ? 'fw-bold' : '' }}" href="{{ route('admin.dashboardAdmin') }}">
+                        <i class="bi bi-people me-1"></i>Clientes
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('admin.dashboardAdmin') }}"><i class="bi bi-exclamation-triangle me-1"></i>Reclamos</a>
+                    <a class="nav-link {{ Request::is('admin/reclamos') ? 'fw-bold' : '' }}" href="{{ route('admin.dashboardAdmin') }}">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Reclamos
+                    </a>
                 </li>
+
             </ul>
 
             @guest

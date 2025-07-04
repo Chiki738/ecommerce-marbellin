@@ -11,7 +11,7 @@ class ProductoController extends Controller
     public function index()
     {
         return view('admin.productosAdmin', [
-            'productos' => Producto::all(),
+            'productos' => Producto::with('categoria')->orderBy('nombre')->get(),
             'variantes' => VarianteProducto::all(),
             'categorias' => Categoria::all()
         ]);
@@ -46,7 +46,7 @@ class ProductoController extends Controller
             }
         }
 
-        return back()->with('success', 'Producto y variantes generadas automáticamente');
+        return redirect()->route('admin.productosAdmin')->with('success', 'Producto y variantes generadas automáticamente');
     }
 
     public function destroy($codigo)
@@ -73,7 +73,7 @@ class ProductoController extends Controller
 
         $producto->update($data);
 
-        return redirect()->route('admin.productosAdmin')->with('success', 'Producto actualizado correctamente');
+        return response()->json(['message' => 'Producto actualizado correctamente']); // ✅ Siempre responde
     }
 
     public function mostrarProductosPublico(Request $request)

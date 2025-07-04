@@ -9,11 +9,12 @@ class VarianteController extends Controller
 {
     public function actualizarCantidad(Request $request, VarianteProducto $variante)
     {
-        $validated = $request->validate([
+        $request->validate([
             'cantidad' => 'required|integer|min:0',
         ]);
 
-        $variante->update($validated);
+        $variante->cantidad = $request->input('cantidad');
+        $variante->save();
 
         return response()->json(['message' => 'Cantidad actualizada']);
     }

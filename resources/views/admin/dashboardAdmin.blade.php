@@ -1,7 +1,7 @@
-@extends('admin.appAdmin')
+@extends('layouts.app')
 
 @section('content')
 <iframe
-    src="https://dashboard-mdpu.onrender.com/">
+    src="http://127.0.0.1:8050">
 </iframe>
 @endsection

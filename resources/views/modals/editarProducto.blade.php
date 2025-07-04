@@ -6,21 +6,29 @@
             @method('PUT')
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editarProductoLabel">Editar Producto</h5>
+                    <h5 class="modal-title">Editar Producto</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="codigo" id="codigo" readonly>
 
-                    <label for="nombre">Nombre</label>
-                    <input type="text" name="nombre" id="nombre" class="form-control mb-2" required>
-
-                    <label for="precio">Precio</label>
-                    <input type="number" step="0.01" name="precio" id="precio" class="form-control mb-2" required>
+                    @foreach ([
+                    ['label' => 'Nombre', 'type' => 'text', 'name' => 'nombre'],
+                    ['label' => 'Precio', 'type' => 'number', 'name' => 'precio', 'step' => '0.01'],
+                    ] as $input)
+                    <label for="{{ $input['name'] }}">{{ $input['label'] }}</label>
+                    <input
+                        type="{{ $input['type'] }}"
+                        name="{{ $input['name'] }}"
+                        id="{{ $input['name'] }}"
+                        class="form-control mb-2"
+                        {{ isset($input['step']) ? "step={$input['step']}" : '' }}
+                        required>
+                    @endforeach
 
                     <label for="categoria">Categoría</label>
                     <select name="categoria_id" id="categoria" class="form-control mb-2" required>
-                        <option value="" disabled>Selecciona una categoría</option>
+                        <option value="" disabled selected>Selecciona una categoría</option>
                         @foreach ($categorias as $categoria)
                         <option value="{{ $categoria->categoria_id }}">{{ $categoria->nombre }}</option>
                         @endforeach
@@ -32,7 +40,7 @@
                     <label for="imagen">Imagen</label>
                     <input type="file" name="imagen" id="imagen" class="form-control mb-2" accept="image/*">
 
-                    <div id="previewImagen" class="mt-2">
+                    <div id="previewImagen" class="mt-2 d-none">
                         <img src="" alt="Imagen actual" style="max-width: 100%; max-height: 150px;">
                     </div>
                 </div>
@@ -45,49 +53,6 @@
     </div>
 </div>
 
-<!-- Script para manejar la carga de datos al modal -->
-<script>
-    document.querySelectorAll('.btnEditarProducto').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const codigo = btn.getAttribute('data-codigo');
-            const nombre = btn.getAttribute('data-nombre');
-            const precio = btn.getAttribute('data-precio');
-            const categoria = btn.getAttribute('data-categoria');
-            const descripcion = btn.getAttribute('data-descripcion');
-            const imagenUrl = btn.getAttribute('data-imagen');
-
-            const form = document.getElementById('formEditarProducto');
-            form.action = `/productos/${codigo}`;
-
-            form.codigo.value = codigo;
-            form.nombre.value = nombre;
-            form.precio.value = precio;
-            form.categoria.value = categoria; // Asegúrate de que "categoria" sea el ID, no el nombre
-            form.descripcion.value = descripcion;
-
-            const preview = document.querySelector('#previewImagen img');
-            if (imagenUrl) {
-                preview.src = imagenUrl;
-                preview.style.display = 'block';
-            } else {
-                preview.src = '';
-                preview.style.display = 'none';
-            }
-
-            const modal = new bootstrap.Modal(document.getElementById('editarProducto'));
-            modal.show();
-        });
-    });
-
-    document.getElementById('imagen').addEventListener('change', e => {
-        const preview = document.querySelector('#previewImagen img');
-        const file = e.target.files[0];
-        if (file) {
-            preview.src = URL.createObjectURL(file);
-            preview.style.display = 'block';
-        } else {
-            preview.src = '';
-            preview.style.display = 'none';
-        }
-    });
-</script>
+@push('scripts')
+<script src="{{ asset('js/productosAdmin/editarProducto.js') }}"></script>
+@endpush

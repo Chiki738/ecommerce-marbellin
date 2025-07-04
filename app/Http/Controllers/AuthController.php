@@ -69,6 +69,7 @@ class AuthController extends Controller
 
             alert()->success('Éxito', 'Código 2FA enviado a tu correo');
             return redirect()->route('2fa.verify');
+            return redirect()->route('admin.home');
         }
 
         alert()->error('Error', 'Correo o contraseña incorrectos.');
@@ -106,7 +107,7 @@ class AuthController extends Controller
         session(['2fa_verified' => true]);
 
         alert()->success('Autenticación exitosa', 'Bienvenido(a) al sistema');
-        return redirect($guard === 'admin' ? route('admin.dashboardAdmin') : route('pages.home'));
+        return redirect($guard === 'admin' ? route('admin.productosAdmin') : route('pages.home'));
     }
 
     public function signup()

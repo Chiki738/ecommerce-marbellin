@@ -70,6 +70,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/eliminar/{id}', [PedidoController::class, 'eliminar'])->name('carrito.eliminar');
         Route::delete('/vaciar', [PedidoController::class, 'vaciar'])->name('carrito.vaciar');
         Route::post('/checkout', [PedidoController::class, 'checkout'])->name('carrito.checkout');
+        Route::get('/verificar-stock/{pedido}', [App\Http\Controllers\PagoController::class, 'verificarStock']);
+    
     });
 
     Route::get('/pago/exito', [PagoController::class, 'exito'])->name('pago.exito');
@@ -94,8 +96,8 @@ Route::prefix('admin')->middleware(['auth:admin', 'verified'])->group(function (
     });
 
     // Variantes
-    Route::put('/variantes/{id}/actualizar', [VarianteController::class, 'actualizarCantidad'])->name('variantes.actualizar');
-
+    // ✅ Ruta correcta dentro del prefix 'admin'
+    Route::put('variantes/{variante}/actualizar', [VarianteController::class, 'actualizarCantidad'])->name('variantes.actualizar');
     // Pedidos
     Route::get('/pedidos', [PedidoController::class, 'index'])->name('admin.pedidosAdmin');
 });

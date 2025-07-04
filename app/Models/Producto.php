@@ -28,7 +28,7 @@ class Producto extends Model
 
     public function categoria(): BelongsTo
     {
-        return $this->belongsTo(Categoria::class);
+        return $this->belongsTo(Categoria::class, 'categoria_id', 'categoria_id');
     }
 
     protected static function booted(): void

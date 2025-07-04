@@ -59,11 +59,8 @@ class PedidoController extends Controller
 
             $pedido->update(['total' => $pedido->detalles()->sum('subtotal')]);
 
-            Log::info("Producto agregado al pedido ID: {$pedido->id}");
-
             return $this->respuesta($request, 'Producto agregado al carrito');
         } catch (\Exception $e) {
-            Log::error("Error al agregar al carrito: {$e->getMessage()}");
             return $this->respuesta($request, 'Ocurrió un error al agregar el producto', 500, true);
         }
     }
@@ -88,11 +85,22 @@ class PedidoController extends Controller
             'subtotal' => $detalle->precio_unit * $request->cantidad,
         ]);
 
-        $detalle->pedido->update([
-            'total' => $detalle->pedido->detalles()->sum('subtotal'),
-        ]);
+        $pedido = $detalle->pedido;
+        $pedido->update(['total' => $pedido->detalles()->sum('subtotal')]);
 
-        return $this->respuesta($request, 'Cantidad actualizada correctamente');
+        return response()->json([
+            'success' => true,
+            'message' => 'Cantidad actualizada',
+            'subtotal' => $detalle->subtotal,
+            'total' => $pedido->total,
+            'producto' => $detalle->producto->nombre,
+            'resumenCantidad' => $pedido->detalles
+                ->where('producto_codigo', $detalle->producto_codigo)
+                ->sum('cantidad'),
+            'resumenSubtotal' => $pedido->detalles
+                ->where('producto_codigo', $detalle->producto_codigo)
+                ->sum('subtotal'),
+        ]);
     }
 
     public function eliminar(Request $request, $id)
@@ -103,7 +111,10 @@ class PedidoController extends Controller
         $detalle->delete();
         $pedido->update(['total' => $pedido->detalles()->sum('subtotal')]);
 
-        return $this->respuesta($request, 'Producto eliminado del carrito');
+        return response()->json([
+            'message' => 'Producto eliminado del carrito',
+            'total' => $pedido->total,
+        ]);
     }
 
     public function vaciar(Request $request)
@@ -118,7 +129,10 @@ class PedidoController extends Controller
             $pedido->update(['total' => 0]);
         }
 
-        return $this->respuesta($request, 'Carrito vaciado correctamente');
+        return response()->json([
+            'message' => 'Carrito vaciado correctamente',
+            'total' => 0,
+        ]);
     }
 
     /**
@@ -126,11 +140,8 @@ class PedidoController extends Controller
      */
     private function respuesta(Request $request, string $mensaje, int $code = 200, bool $esError = false)
     {
-        if ($request->ajax()) {
-            return response()->json([$esError ? 'error' : 'message' => $mensaje], $code);
-        }
-
-        $tipo = $esError ? 'error' : 'success';
-        return redirect()->back()->with($tipo, $mensaje);
+        return response()->json([
+            $esError ? 'error' : 'message' => $mensaje
+        ], $code);
     }
 }

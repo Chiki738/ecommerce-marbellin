@@ -34,25 +34,40 @@
                             <div class="border rounded p-2 mb-2">
                                 <div class="d-flex justify-content-between align-items-center flex-wrap">
                                     <div class="mb-2">
-                                        <small class="text-muted d-block">Color: {{ $detalle->variante->color }} | Talla: {{ $detalle->variante->talla }}</small>
-                                        <small class="text-muted d-block">SKU: {{ $producto->codigo }}-{{ strtoupper($detalle->variante->color) }}-{{ strtoupper($detalle->variante->talla) }}</small>
-                                        <small class="text-muted d-block">Cantidad: {{ $detalle->cantidad }}</small>
-                                        <small class="text-muted d-block">Subtotal: S/ {{ number_format($detalle->subtotal, 2) }}</small>
+                                        <small class="text-muted d-block">
+                                            Color: {{ $detalle->variante->color ?? 'No disponible' }} |
+                                            Talla: {{ $detalle->variante->talla ?? 'No disponible' }}
+                                        </small>
+
+                                        <small class="text-muted d-block">
+                                            SKU: {{ $producto->codigo }}-{{ strtoupper($detalle->variante->color ?? 'ND') }}-{{ strtoupper($detalle->variante->talla ?? 'ND') }}
+                                        </small>
+
+                                        <small class="text-muted d-block">
+                                            Cantidad: <span class="cantidad-texto">{{ $detalle->cantidad }}</span>
+                                        </small>
+
+                                        <small class="text-muted d-block">
+                                            Subtotal: S/ <span class="subtotal-texto">{{ number_format($detalle->subtotal, 2) }}</span>
+                                        </small>
+
                                     </div>
                                     <div class="d-flex align-items-center">
-                                        <form action="{{ route('carrito.actualizar', $detalle->id) }}" method="POST" class="me-2 d-flex">
+                                        <form action="{{ route('carrito.actualizar', $detalle->id) }}" class="me-2 d-flex form-actualizar" method="POST">
                                             @csrf
                                             @method('PUT')
                                             <input type="number" name="cantidad" value="{{ $detalle->cantidad }}" min="1" class="form-control form-control-sm text-center me-1" style="width: 60px;">
                                             <button class="btn btn-outline-secondary btn-sm">Actualizar</button>
                                         </form>
-                                        <form action="{{ route('carrito.eliminar', $detalle->id) }}" method="POST">
+
+                                        <form action="{{ route('carrito.eliminar', $detalle->id) }}" class="form-eliminar" method="POST">
                                             @csrf
                                             @method('DELETE')
                                             <button class="btn btn-outline-danger btn-sm" title="Eliminar">
                                                 <i class="bi bi-trash"></i> Eliminar
                                             </button>
                                         </form>
+
                                     </div>
                                 </div>
                             </div>
@@ -76,20 +91,11 @@
                 </div>
                 <div class="card-body">
                     @if ($pedido && $pedido->detalles->count())
-                    @php
-                    $resumen = $pedido->detalles->groupBy(function($item) {
-                    return $item->producto->nombre;
-                    });
-                    @endphp
-                    <ul class="list-unstyled mb-3">
-                        @foreach ($resumen as $nombre => $items)
-                        @php
-                        $totalCantidad = $items->sum('cantidad');
-                        $totalSubtotal = $items->sum('subtotal');
-                        @endphp
-                        <li class="d-flex justify-content-between">
-                            <span>{{ $nombre }} ({{ $totalCantidad }})</span>
-                            <span>S/ {{ number_format($totalSubtotal, 2) }}</span>
+                    <ul id="resumen-productos" class="list-unstyled mb-3">
+                        @foreach ($pedido->detalles->groupBy('producto.nombre') as $nombre => $items)
+                        <li class="d-flex justify-content-between resumen-item" data-producto="{{ $nombre }}">
+                            <span>{{ $nombre }} (<span class="resumen-cantidad">{{ $items->sum('cantidad') }}</span>)</span>
+                            <span>S/ <span class="resumen-subtotal">{{ number_format($items->sum('subtotal'), 2) }}</span></span>
                         </li>
                         @endforeach
                     </ul>
@@ -97,7 +103,7 @@
                     <hr>
                     <div class="d-flex justify-content-between mb-3">
                         <strong>Total:</strong>
-                        <strong class="text-primary">S/ {{ number_format($pedido?->total ?? 0, 2) }}</strong>
+                        <strong class="text-primary">S/ <span id="total-pedido">{{ number_format($pedido?->total ?? 0, 2) }}</span></strong>
                     </div>
 
                     @if ($pedido && $pedido->detalles->count())
@@ -105,7 +111,7 @@
                     <div class="d-grid gap-2">
                         <div id="paypal-button-container" class="mt-3"></div>
 
-                        <form action="{{ route('carrito.vaciar') }}" method="POST">
+                        <form action="{{ route('carrito.vaciar') }}" class="form-vaciar">
                             @csrf
                             @method('DELETE')
                             <button class="btn btn-outline-secondary w-100" type="submit">
@@ -120,44 +126,116 @@
     </div>
 </div>
 
-<!-- SDK de PayPal -->
 <script src="https://www.paypal.com/sdk/js?client-id=ASdq36S1LmT-GX6If7Pbd7pRsdRtNaSuhsFkFe5BhHhn_nUlrr8KakgZZN057NBnbmM7QYmLJga6LH3R&currency=USD"></script>
+@endsection
 
+@push('scripts')
 <script>
-    const pedidoId = document.getElementById('pedidoId')?.value;
+    document.addEventListener("DOMContentLoaded", () => {
+        const pedidoId = document.getElementById("pedidoId")?.value;
 
-    paypal.Buttons({
-        createOrder: function(data, actions) {
-            return actions.order.create({
-                purchase_units: [{
-                    amount: {
-                        value: '{{ number_format($pedido?->total ?? 0, 2, ".", "") }}'
-                    }
-                }]
-            });
-        },
-        onApprove: function(data, actions) {
-            return actions.order.capture().then(function(details) {
-                fetch(`/pago/exito?pedido_id=${pedidoId}`, {
-                        method: 'GET',
+        if (pedidoId) {
+            paypal.Buttons({
+                createOrder: (data, actions) => {
+                    return actions.order.create({
+                        purchase_units: [{
+                            amount: {
+                                value: document.getElementById('total-pedido').textContent.replace(',', '')
+                            }
+
+                        }]
+                    });
+                },
+                onApprove: async (data, actions) => {
+                    const resStock = await fetch(`/carrito/verificar-stock/${pedidoId}`, {
+                        method: "GET",
                         headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert('✅ Tu pedido fue generado correctamente.');
-                            window.location.href = '/carrito'; // o redirige a productos o dashboard
-                        } else {
-                            alert('Error al actualizar el pedido en el sistema.');
+                            "X-Requested-With": "XMLHttpRequest"
                         }
                     });
+                    const stockData = await resStock.json();
+
+                    if (!stockData.success) {
+                        Swal.fire({
+                            icon: "error",
+                            html: stockData.errores.join("<br>"),
+                            confirmButtonText: "Aceptar"
+                        });
+                        return;
+                    }
+
+                    await actions.order.capture();
+                    try {
+                        const res = await fetch(`/pago/exito?pedido_id=${pedidoId}`, {
+                            method: "GET",
+                            headers: {
+                                "X-Requested-With": "XMLHttpRequest"
+                            }
+                        });
+                        const dataJson = await res.json();
+                        Swal.fire({
+                            icon: dataJson.success ? "success" : "error",
+                            text: dataJson.success ? "Tu pedido fue generado correctamente." : "Error al actualizar el pedido.",
+                            timer: 2500,
+                            showConfirmButton: false
+                        }).then(() => location.reload());
+                    } catch (error) {
+                        console.error("Error en pago:", error);
+                        Swal.fire({
+                            icon: "error",
+                            text: "Error al procesar el pago.",
+                            timer: 2500,
+                            showConfirmButton: false
+                        });
+                    }
+                },
+                onCancel: () => {
+                    Swal.fire({
+                        icon: "error",
+                        text: "El pago fue cancelado.",
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            }).render('#paypal-button-container');
+        }
+
+        document.querySelectorAll('.form-actualizar').forEach(form => {
+            form.addEventListener('submit', async e => {
+                e.preventDefault();
+
+                const url = form.action;
+                const formData = new FormData(form);
+                const cantidad = formData.get("cantidad");
+
+                try {
+                    const res = await fetch(url, {
+                        method: "POST",
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': formData.get('_token')
+                        },
+                        body: formData
+                    });
+
+                    const data = await res.json();
+
+                    Swal.fire('Actualizado', data.message, 'success');
+                    form.closest('.border').querySelector('.cantidad-texto').textContent = cantidad;
+                    form.closest('.border').querySelector('.subtotal-texto').textContent = parseFloat(data.subtotal).toFixed(2);
+                    document.getElementById('total-pedido').textContent = parseFloat(data.total).toFixed(2);
+
+                    const resumenItem = [...document.querySelectorAll('.resumen-item')].find(item => item.dataset.producto === data.producto);
+                    if (resumenItem) {
+                        resumenItem.querySelector('.resumen-cantidad').textContent = data.resumenCantidad;
+                        resumenItem.querySelector('.resumen-subtotal').textContent = parseFloat(data.resumenSubtotal).toFixed(2);
+                    }
+
+                } catch (error) {
+                    Swal.fire('Error', 'No se pudo actualizar', 'error');
+                }
             });
-        },
-        onCancel: function(data) {
-            window.location.href = "/pago/cancelado";
-        },
-    }).render('#paypal-button-container');
+        });
+    });
 </script>
-@endsection
+@endpush
