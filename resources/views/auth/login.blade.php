@@ -1,21 +1,25 @@
 @extends('auth.acceso')
 
 @section('formContent')
-<form id="formLogin" action="{{ route('login') }}" method="POST" class="w-100 needs-validation p-sm-4 p-1" novalidate>
+<form id="formLogin" action="{{ route('login') }}" method="POST" class="needs-validation p-3 p-sm-4" novalidate>
     @csrf
     <h3 class="text-center mb-4">Iniciar sesión</h3>
 
-    <div class="form-floating mb-3">
-        <input type="email" name="email" class="form-control" id="loginEmail" placeholder="correo@example.com" required>
-        <label for="loginEmail">Correo electrónico</label>
-        <div class="invalid-feedback">Ingresa un correo válido.</div>
-    </div>
+    @php
+    $campos = [
+    ['name' => 'email', 'type' => 'email', 'label' => 'Correo electrónico', 'placeholder' => 'correo@example.com', 'invalid' => 'Ingresa un correo válido.'],
+    ['name' => 'password', 'type' => 'password', 'label' => 'Contraseña', 'placeholder' => 'Contraseña', 'invalid' => 'La contraseña es obligatoria.']
+    ];
+    @endphp
 
-    <div class="form-floating mb-4">
-        <input type="password" name="password" class="form-control" id="loginPass" placeholder="Contraseña" required>
-        <label for="loginPass">Contraseña</label>
-        <div class="invalid-feedback">La contraseña es obligatoria.</div>
+    @foreach ($campos as $campo)
+    <div class="form-floating mb-{{ $loop->last ? 4 : 3 }}">
+        <input type="{{ $campo['type'] }}" name="{{ $campo['name'] }}" id="login{{ ucfirst($campo['name']) }}"
+            class="form-control" placeholder="{{ $campo['placeholder'] }}" required>
+        <label for="login{{ ucfirst($campo['name']) }}">{{ $campo['label'] }}</label>
+        <div class="invalid-feedback">{{ $campo['invalid'] }}</div>
     </div>
+    @endforeach
 
     <button class="btn btn-success w-100 py-2">Entrar</button>
 </form>

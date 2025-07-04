@@ -1,6 +1,7 @@
 @extends('auth.acceso')
 
 @section('formContent')
+
 @if ($errors->any())
 <div class="alert alert-danger mt-3">
     <ul class="mb-0">
@@ -10,35 +11,35 @@
     </ul>
 </div>
 @endif
-<form id="formSign" action="{{ route('signup.post') }}" method="POST" class="w-100 needs-validation p-sm-4 p-1" novalidate>
+
+<form id="formSign" action="{{ route('signup.post') }}" method="POST" class="needs-validation p-3 p-sm-4" novalidate>
     @csrf
     <h3 class="text-center mb-3">Registrarse</h3>
 
+    @php
+    $campos = [
+    ['name' => 'nombre', 'label' => 'Primer nombre', 'type' => 'text', 'col' => 6],
+    ['name' => 'apellido', 'label' => 'Primer apellido', 'type' => 'text', 'col' => 6],
+    ['name' => 'email', 'label' => 'Correo electrónico', 'type' => 'email', 'col' => 12],
+    ['name' => 'password', 'label' => 'Contraseña', 'type' => 'password', 'col' => 6],
+    ['name' => 'password_confirmation', 'label' => 'Confirmar contraseña', 'type' => 'password', 'col' => 6],
+    ['name' => 'direccion', 'label' => 'Dirección exacta', 'type' => 'text', 'col' => 12],
+    ];
+    @endphp
+
     <div class="row g-3">
-        <div class="col-sm-6 form-floating">
-            <input type="text" name="nombre" class="form-control" id="nombre" placeholder="Nombre" required>
-            <label for="nombre">Primer nombre</label>
+        @foreach ($campos as $campo)
+        <div class="col-sm-{{ $campo['col'] }} form-floating">
+            <input type="{{ $campo['type'] }}"
+                name="{{ $campo['name'] }}"
+                id="{{ $campo['name'] }}"
+                class="form-control"
+                placeholder="{{ $campo['label'] }}"
+                required
+                autocomplete="off">
+            <label for="{{ $campo['name'] }}">{{ $campo['label'] }}</label>
         </div>
-        <div class="col-sm-6 form-floating">
-            <input type="text" name="apellido" class="form-control" id="apellido" placeholder="Apellido" required>
-            <label for="apellido">Primer apellido</label>
-        </div>
-    </div>
-
-    <div class="form-floating mt-3">
-        <input type="email" name="email" class="form-control" id="email" placeholder="Correo" required>
-        <label for="email">Correo electrónico</label>
-    </div>
-
-    <div class="row g-3 mt-3">
-        <div class="col-sm-6 form-floating">
-            <input type="password" name="password" class="form-control" id="pass" placeholder="Contraseña" required>
-            <label for="pass">Contraseña</label>
-        </div>
-        <div class="col-sm-6 form-floating">
-            <input type="password" name="password_confirmation" class="form-control" id="pass2" placeholder="Confirmar" required>
-            <label for="pass2">Confirmar contraseña</label>
-        </div>
+        @endforeach
     </div>
 
     <div class="row mt-3">
@@ -58,11 +59,6 @@
                 <option value="">Seleccionar Distrito</option>
             </select>
         </div>
-    </div>
-
-    <div class="form-floating mt-3">
-        <input type="text" name="direccion" class="form-control" id="direccion" placeholder="Dirección" autocomplete="off" required>
-        <label for="direccion">Dirección exacta</label>
     </div>
 
     <button class="btn btn-success w-100 py-2 mt-4">Registrarse</button>

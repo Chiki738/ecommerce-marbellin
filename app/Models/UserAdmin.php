@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-class UserAdmin extends Authenticatable
+class UserAdmin extends Authenticatable implements MustVerifyEmail
 {
-    use Notifiable;
+    use HasFactory, Notifiable;
 
     protected $table = 'users_admin';
 
@@ -22,10 +24,7 @@ class UserAdmin extends Authenticatable
         'remember_token',
     ];
 
-    public $timestamps = true;
-
-    public function setPasswordAttribute($value)
-    {
-        $this->attributes['password'] = bcrypt($value);
-    }
+    protected $casts = [
+        'password' => 'hashed',
+    ];
 }

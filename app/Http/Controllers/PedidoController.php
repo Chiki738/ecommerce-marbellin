@@ -5,24 +5,16 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use App\Models\Pedido;
-use App\Models\DetallePedido;
-use App\Models\Producto;
+use App\Models\{Pedido, DetallePedido, Producto, VarianteProducto};
 
 class PedidoController extends Controller
 {
     public function agregarAlCarrito(Request $request)
     {
-        // Si no está logueado, redirige al login
         if (!Auth::check()) {
-            if ($request->ajax()) {
-                return response()->json(['error' => 'Debes iniciar sesión'], 401);
-            }
-            return redirect()->route('login');
+            return $this->respuesta($request, 'Debes iniciar sesión', 401, true);
         }
 
-
-        // Validar datos del formulario
         $request->validate([
             'producto_codigo' => 'required|string|exists:productos,codigo',
             'talla' => 'required|string',
@@ -32,25 +24,17 @@ class PedidoController extends Controller
 
         try {
             $user = Auth::user();
-            Log::info("Cliente autenticado: " . $user->cliente_id);
-
             $producto = Producto::where('codigo', $request->producto_codigo)->firstOrFail();
 
-            $variante = \App\Models\VarianteProducto::where([
-                ['producto_codigo', '=', $request->producto_codigo],
-                ['talla', '=', $request->talla],
-                ['color', '=', $request->color],
+            $variante = VarianteProducto::where([
+                ['producto_codigo', $request->producto_codigo],
+                ['talla', $request->talla],
+                ['color', $request->color],
             ])->first();
 
             if (!$variante || $variante->cantidad < $request->cantidad) {
-                if ($request->ajax()) {
-                    return response()->json(['error' => 'La combinación de talla y color no está disponible o no hay suficiente stock.'], 422);
-                }
-                return redirect()->back()->with('error', 'La combinación de talla y color no está disponible o no hay suficiente stock.');
+                return $this->respuesta($request, 'Talla/color no disponible o stock insuficiente', 422, true);
             }
-
-            $distrito = $user->distrito;
-            $provincia = $distrito?->provincia;
 
             $pedido = Pedido::firstOrCreate(
                 ['cliente_id' => $user->cliente_id, 'estado_id' => 1],
@@ -62,114 +46,91 @@ class PedidoController extends Controller
                 ]
             );
 
-            $precioUnit = $producto->precio;
-            $subtotal = $precioUnit * $request->cantidad;
+            $detalle = DetallePedido::firstOrNew([
+                'pedido_id' => $pedido->id,
+                'producto_codigo' => $producto->codigo,
+                'variante_id' => $variante->id,
+            ]);
 
-            $detalleExistente = DetallePedido::where('pedido_id', $pedido->id)
-                ->where('producto_codigo', $producto->codigo)
-                ->where('variante_id', $variante->id)
-                ->first();
+            $detalle->cantidad += $request->cantidad;
+            $detalle->precio_unit = $producto->precio;
+            $detalle->subtotal += $producto->precio * $request->cantidad;
+            $detalle->save();
 
-            if ($detalleExistente) {
-                $detalleExistente->cantidad += $request->cantidad;
-                $detalleExistente->subtotal += $precioUnit * $request->cantidad;
-                $detalleExistente->save();
-            } else {
-                DetallePedido::create([
-                    'pedido_id' => $pedido->id,
-                    'producto_codigo' => $producto->codigo,
-                    'cantidad' => $request->cantidad,
-                    'precio_unit' => $precioUnit,
-                    'subtotal' => $subtotal,
-                    'variante_id' => $variante->id,
-                ]);
-            }
+            $pedido->update(['total' => $pedido->detalles()->sum('subtotal')]);
 
-            $pedido->total += $subtotal;
-            $pedido->save();
+            Log::info("Producto agregado al pedido ID: {$pedido->id}");
 
-            Log::info("Producto agregado al pedido ID: " . $pedido->id);
-
-            if ($request->ajax()) {
-                return response()->json(['message' => 'Producto agregado al carrito']);
-            }
-
-            return redirect()->back()->with('success', 'Producto agregado al carrito');
+            return $this->respuesta($request, 'Producto agregado al carrito');
         } catch (\Exception $e) {
-            Log::error("Error al agregar al carrito: " . $e->getMessage());
-
-            if ($request->ajax()) {
-                return response()->json(['error' => 'Ocurrió un error al agregar el producto'], 500);
-            }
-
-            return redirect()->back()->with('error', 'Ocurrió un error al agregar el producto');
+            Log::error("Error al agregar al carrito: {$e->getMessage()}");
+            return $this->respuesta($request, 'Ocurrió un error al agregar el producto', 500, true);
         }
     }
 
-    public function index()
+    public function carrito()
     {
-        $user = Auth::user();
-
-        $pedido = Pedido::where('cliente_id', $user->cliente_id)
+        $pedido = Pedido::with('detalles.producto', 'detalles.variante')
+            ->where('cliente_id', Auth::user()->cliente_id)
             ->where('estado_id', 1)
-            ->with('detalles.producto', 'detalles.variante')
             ->first();
 
-
-        return view('carrito.index', compact('pedido'));
+        return view('carrito.carrito', compact('pedido'));
     }
 
     public function actualizarCantidad(Request $request, $id)
     {
-        $detalle = DetallePedido::findOrFail($id);
+        $request->validate(['cantidad' => 'required|integer|min:1']);
 
-        $request->validate([
-            'cantidad' => 'required|integer|min:1',
+        $detalle = DetallePedido::findOrFail($id);
+        $detalle->update([
+            'cantidad' => $request->cantidad,
+            'subtotal' => $detalle->precio_unit * $request->cantidad,
         ]);
 
-        $detalle->cantidad = $request->cantidad;
-        $detalle->subtotal = $detalle->precio_unit * $request->cantidad;
-        $detalle->save();
+        $detalle->pedido->update([
+            'total' => $detalle->pedido->detalles()->sum('subtotal'),
+        ]);
 
-        // Recalcular el total del pedido
-        $pedido = $detalle->pedido;
-        $pedido->total = $pedido->detalles()->sum('subtotal');
-        $pedido->save();
-
-        return redirect()->back()->with('success', 'Cantidad actualizada correctamente');
+        return $this->respuesta($request, 'Cantidad actualizada correctamente');
     }
 
-    public function eliminar($id)
+    public function eliminar(Request $request, $id)
     {
         $detalle = DetallePedido::findOrFail($id);
         $pedido = $detalle->pedido;
 
         $detalle->delete();
+        $pedido->update(['total' => $pedido->detalles()->sum('subtotal')]);
 
-        // Actualizar el total del pedido
-        $pedido->total = $pedido->detalles()->sum('subtotal');
-        $pedido->save();
-
-        return redirect()->route('carrito')->with('success', 'Producto eliminado del carrito');
+        return $this->respuesta($request, 'Producto eliminado del carrito');
     }
 
-    public function vaciar()
+    public function vaciar(Request $request)
     {
-        $user = Auth::user();
-
-        $pedido = Pedido::where('cliente_id', $user->cliente_id)
+        $pedido = Pedido::with('detalles')
+            ->where('cliente_id', Auth::user()->cliente_id)
             ->where('estado_id', 1)
-            ->with('detalles')
             ->first();
 
         if ($pedido) {
-            foreach ($pedido->detalles as $detalle) {
-                $detalle->delete();
-            }
-            $pedido->total = 0;
-            $pedido->save();
+            $pedido->detalles()->delete();
+            $pedido->update(['total' => 0]);
         }
 
-        return redirect()->route('carrito')->with('success', 'Carrito vaciado correctamente');
+        return $this->respuesta($request, 'Carrito vaciado correctamente');
+    }
+
+    /**
+     * Retorna respuesta JSON o redirect según tipo de request.
+     */
+    private function respuesta(Request $request, string $mensaje, int $code = 200, bool $esError = false)
+    {
+        if ($request->ajax()) {
+            return response()->json([$esError ? 'error' : 'message' => $mensaje], $code);
+        }
+
+        $tipo = $esError ? 'error' : 'success';
+        return redirect()->back()->with($tipo, $mensaje);
     }
 }

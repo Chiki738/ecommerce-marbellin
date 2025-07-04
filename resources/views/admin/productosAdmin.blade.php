@@ -1,5 +1,5 @@
 @extends('admin.appAdmin')
-@include('admin.modals.editarProducto')
+@include('modals.editarProducto')
 
 @section('content')
 <div class="container-fluid py-4">
@@ -154,5 +154,5 @@
     </div>
 </div>
 
-@include('admin.modals.agregarProducto')
+@include('modals.agregarProducto')
 @endsection

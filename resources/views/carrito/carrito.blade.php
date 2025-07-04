@@ -7,7 +7,7 @@
 </div>
 @endif
 
-<div class="container py-5">
+<div class="container py-5" style="min-height: 100vh;">
     <div class="row">
         <div class="col-lg-8">
             <div class="d-flex justify-content-between align-items-center mb-4">
