@@ -4,8 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\EstadoPedidoActualizado;
+use App\Models\User;
 use App\Models\{Pedido, DetallePedido, Producto, VarianteProducto};
+use App\Models\EstadoPedido;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class PedidoController extends Controller
 {
@@ -143,5 +148,142 @@ class PedidoController extends Controller
         return response()->json([
             $esError ? 'error' : 'message' => $mensaje
         ], $code);
+    }
+    public function index()
+    {
+        $pedidos = Pedido::with('cliente')->get();
+
+        return view('admin.pedidosAdmin', compact('pedidos'));
+    }
+
+    public function buscarPorFiltros(Request $request)
+    {
+        $id = $request->query('id');
+        $email = $request->query('email');
+        $estado = $request->query('estado');
+        $fecha = $request->query('fecha');
+        $perPage = $request->query('perPage', 10);
+
+        // Si se proporciona ID del pedido, devolver solo ese
+        if ($id) {
+            $pedido = Pedido::with(['cliente', 'detalles'])->find($id);
+            if (!$pedido) {
+                return response('', 204);
+            }
+
+            return view('partials.pedidosCliente', [
+                'pedidos' => collect([$pedido]), // para que funcione igual que una colección paginada
+                'cliente' => $pedido->cliente
+            ])->render();
+        }
+
+        $query = Pedido::with(['cliente', 'detalles']);
+
+        if ($email) {
+            $cliente = User::where('email', $email)->first();
+            if (!$cliente) {
+                return response('', 204);
+            }
+            $query->where('cliente_id', $cliente->cliente_id);
+        }
+
+        if ($estado) {
+            $query->where('estado_id', $estado);
+        }
+
+        if ($fecha === 'semana') {
+            $query->whereBetween('fecha', [now()->startOfWeek(), now()->endOfWeek()]);
+        }
+
+        $pedidos = $query->paginate($perPage);
+
+        if ($pedidos->isEmpty()) {
+            return response('', 204);
+        }
+
+        return view('partials.pedidosCliente', [
+            'pedidos' => $pedidos,
+            'cliente' => $email ? $cliente ?? null : null
+        ])->render();
+    }
+
+    public function cambiarEstado(Request $request, $id)
+    {
+        $pedido = Pedido::with('cliente')->findOrFail($id);
+        $estado = EstadoPedido::findOrFail($request->estado_id);
+        $pedido->estado_id = $estado->id;
+        $pedido->save();
+
+        // Enviar email al cliente
+        if ($pedido->cliente && $pedido->cliente->email) {
+            Mail::to($pedido->cliente->email)->send(new EstadoPedidoActualizado($pedido, $estado->nombre));
+        }
+
+        return response()->json([
+            'success' => true,
+            'estado' => ucfirst($estado->nombre),
+            'clase' => match ($estado->nombre) {
+                'pendiente' => 'bg-warning',
+                'procesando' => 'bg-primary',
+                'enviado' => 'bg-info',
+                'entregado' => 'bg-success',
+                'cancelado' => 'bg-danger',
+                default => 'bg-secondary',
+            },
+            'message' => 'Estado actualizado correctamente.'
+        ]);
+    }
+
+    public function cancelar($id)
+    {
+        $pedido = Pedido::with('cliente')->findOrFail($id);
+        $estado = EstadoPedido::where('nombre', 'cancelado')->first();
+        $pedido->estado_id = $estado->id;
+        $pedido->save();
+
+        // Enviar email al cliente
+        if ($pedido->cliente && $pedido->cliente->email) {
+            Mail::to($pedido->cliente->email)->send(new EstadoPedidoActualizado($pedido, 'cancelado'));
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pedido cancelado correctamente.'
+        ]);
+    }
+
+    public function detalle($id)
+    {
+        $pedido = Pedido::with([
+            'cliente.distrito',
+            'cliente.distrito.provincia', // 👈 importante
+            'estado',
+            'detalles.producto',
+            'detalles.variante'
+        ])->findOrFail($id);
+
+
+        $estados = EstadoPedido::all(); // ✅ Necesario para el modal
+
+        return view('admin.detallePedidoAdmin', compact('pedido', 'estados'));
+    }
+
+
+    public function imprimir($id)
+    {
+        $pedido = Pedido::with(['cliente.distrito.provincia', 'detalles.producto', 'detalles.variante'])->findOrFail($id);
+
+        $pdf = Pdf::loadView('admin.pedidos.pdf', compact('pedido'));
+        return $pdf->download('pedido_' . $pedido->id . '.pdf');
+    }
+
+    public function historial()
+    {
+        $pedidos = Pedido::with(['detalles.producto', 'detalles.variante', 'estado'])
+            ->where('cliente_id', Auth::user()->cliente_id)
+            ->latest()
+            ->paginate(4); // 👈 Paginación de 4 pedidos por página
+
+        return view('client.historialPedidos', compact('pedidos'));
     }
 }

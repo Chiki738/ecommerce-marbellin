@@ -34,6 +34,12 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function distrito()
     {
-        return $this->belongsTo(Distrito::class);
+        return $this->belongsTo(Distrito::class, 'distrito_id', 'distrito_id');
+    }
+
+
+    public function provincia()
+    {
+        return $this->belongsTo(Provincia::class, 'provincia_id', 'provincia_id');
     }
 }

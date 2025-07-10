@@ -9,6 +9,8 @@ use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\PagoController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
+use App\Http\Controllers\CambioProductoController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -71,10 +73,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/vaciar', [PedidoController::class, 'vaciar'])->name('carrito.vaciar');
         Route::post('/checkout', [PedidoController::class, 'checkout'])->name('carrito.checkout');
         Route::get('/verificar-stock/{pedido}', [App\Http\Controllers\PagoController::class, 'verificarStock']);
-    
     });
-
+    Route::post('/cambio-producto/solicitar', [CambioProductoController::class, 'solicitar'])->name('cambio.solicitar');
     Route::get('/pago/exito', [PagoController::class, 'exito'])->name('pago.exito');
+    Route::get('/historial', [PedidoController::class, 'historial'])->name('client.historial');
 });
 
 /*
@@ -100,4 +102,17 @@ Route::prefix('admin')->middleware(['auth:admin', 'verified'])->group(function (
     Route::put('variantes/{variante}/actualizar', [VarianteController::class, 'actualizarCantidad'])->name('variantes.actualizar');
     // Pedidos
     Route::get('/pedidos', [PedidoController::class, 'index'])->name('admin.pedidosAdmin');
+
+    // Reclamos
+    Route::get('/reclamos', [CambioProductoController::class, 'index'])->name('admin.reclamos');
+
+    Route::get('/pedidos/buscar', [PedidoController::class, 'buscarPorFiltros'])->name('admin.pedidos.buscar');
+    Route::get('/pedidos/{id}', [PedidoController::class, 'detalle'])->name('admin.pedido.detalle');
+    Route::put('/pedidos/{id}/estado', [PedidoController::class, 'cambiarEstado'])->name('admin.pedido.cambiarEstado');
+    Route::put('/pedidos/{id}/cancelar', [PedidoController::class, 'cancelar'])->name('admin.pedidos.cancelar');
+    Route::get('/pedidos/{id}/imprimir', [PedidoController::class, 'imprimir'])->name('admin.pedidos.imprimir');
+    // Cambios de productos (admin)
+    Route::get('/cambios', [CambioProductoController::class, 'index'])->name('admin.cambios.index');
+    Route::put('/cambios/{id}/procesar', [CambioProductoController::class, 'procesar'])->name('admin.cambios.procesar');
+    Route::get('/variantes/buscar', [VarianteController::class, 'buscar'])->name('admin.variantes.buscar');
 });

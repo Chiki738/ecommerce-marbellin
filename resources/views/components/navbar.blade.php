@@ -18,6 +18,7 @@
                 ];
                 if (auth()->check()) {
                 $navItems[] = ['name' => 'Carrito', 'url' => route('carrito'), 'icon' => 'fa-cart-shopping', 'active' => request()->is('carrito')];
+                $navItems[] = ['name' => 'Historial', 'url' => route('client.historial'), 'icon' => 'fa-clock-rotate-left', 'active' => request()->is('historial')];
                 }
                 @endphp
 
@@ -25,6 +26,7 @@
                 <li class="nav-item">
                     <a class="nav-link {{ $item['active'] ? 'text-black' : 'text-secondary' }}" href="{{ $item['url'] }}">
                         <i class="fa-solid {{ $item['icon'] }}"></i>&nbsp;{{ $item['name'] }}
+                        @if($item['name'] === 'Carrito') @endif
                     </a>
                 </li>
                 @endforeach
@@ -58,7 +60,7 @@
                     @foreach($navItems as $item)
                     <li class="nav-item">
                         <a class="nav-link {{ $item['active'] ? 'text-black' : 'text-secondary' }}" href="{{ $item['url'] }}">
-                            {{ $item['name'] }}
+                            <i class="fa-solid {{ $item['icon'] }}"></i>&nbsp;{{ $item['name'] }}
                             @if($item['name'] === 'Carrito')
                             <span class="badge bg-danger">{{ session('carrito') ? count(session('carrito')) : 0 }}</span>
                             @endif

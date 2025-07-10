@@ -20,16 +20,10 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{ Request::is('admin/clientes') ? 'fw-bold' : '' }}" href="{{ route('admin.dashboardAdmin') }}">
-                        <i class="bi bi-people me-1"></i>Clientes
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ Request::is('admin/reclamos') ? 'fw-bold' : '' }}" href="{{ route('admin.dashboardAdmin') }}">
+                    <a class="nav-link {{ Request::is('admin/reclamos') ? 'fw-bold' : '' }}" href="{{ route('admin.reclamos') }}">
                         <i class="bi bi-exclamation-triangle me-1"></i>Reclamos
                     </a>
                 </li>
-
             </ul>
 
             @guest

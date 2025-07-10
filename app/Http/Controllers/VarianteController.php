@@ -18,4 +18,24 @@ class VarianteController extends Controller
 
         return response()->json(['message' => 'Cantidad actualizada']);
     }
+
+    public function buscar(Request $request)
+    {
+        $request->validate([
+            'producto_id' => 'required|integer|exists:productos,id',
+            'talla' => 'required|string',
+            'color' => 'required|string',
+        ]);
+
+        $variante = VarianteProducto::where('producto_id', $request->producto_id)
+            ->where('talla', $request->talla)
+            ->where('color', $request->color)
+            ->first();
+
+        if (!$variante) {
+            return response()->json(['error' => 'Variante no encontrada'], 404);
+        }
+
+        return response()->json(['id' => $variante->id]);
+    }
 }
