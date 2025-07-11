@@ -6,15 +6,10 @@ use App\Models\User;
 use App\Models\UserAdmin;
 use App\Models\Provincia;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\{Auth, Session, Hash, Log, Mail, Validator};
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Carbon;
 use App\Mail\Codigo2FAMail;
-use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
@@ -27,53 +22,41 @@ class AuthController extends Controller
     {
         $credentials = $request->only('email', 'password');
 
-        // Login de usuario
+        // Usuario
         if (Auth::guard('web')->attempt($credentials)) {
-            $authUser = Auth::user();
-            $user = User::find($authUser->cliente_id);
-
-            $codigo = rand(100000, 999999);
-            $user->two_factor_code = $codigo;
-            $user->two_factor_expires_at = now()->addMinutes(10);
-            $user->save();
-
-            Mail::to($user->email)->send(new Codigo2FAMail($codigo));
-
-            session([
-                '2fa_id' => $user->cliente_id,
-                '2fa_guard' => 'web',
-                '2fa_verified' => false,
-            ]);
-
-            alert()->success('Éxito', 'Código 2FA enviado a tu correo');
-            return redirect()->route('2fa.verify');
+            $user = User::find(Auth::user()->cliente_id);
+            return $this->enviarCodigo2FA('web', $user);
         }
 
-        // Login de administrador
+        // Admin
         if (Auth::guard('admin')->attempt($credentials)) {
-            $adminUser = Auth::guard('admin')->user();
-            $admin = UserAdmin::find($adminUser->id);
-
-            $codigo = rand(100000, 999999);
-            $admin->two_factor_code = $codigo;
-            $admin->two_factor_expires_at = now()->addMinutes(10);
-            $admin->save();
-
-            Mail::to($admin->email)->send(new Codigo2FAMail($codigo));
-
-            session([
-                '2fa_id' => $admin->id,
-                '2fa_guard' => 'admin',
-                '2fa_verified' => false,
-            ]);
-
-            alert()->success('Éxito', 'Código 2FA enviado a tu correo');
-            return redirect()->route('2fa.verify');
-            return redirect()->route('admin.home');
+            $admin = UserAdmin::find(Auth::guard('admin')->user()->id);
+            return $this->enviarCodigo2FA('admin', $admin);
         }
 
         alert()->error('Error', 'Correo o contraseña incorrectos.');
         return back()->withInput();
+    }
+
+    private function enviarCodigo2FA(string $guard, $user)
+    {
+        $codigo = rand(100000, 999999);
+
+        $user->update([
+            'two_factor_code' => $codigo,
+            'two_factor_expires_at' => now()->addMinutes(10),
+        ]);
+
+        Mail::to($user->email)->send(new Codigo2FAMail($codigo));
+
+        session([
+            '2fa_id' => $user->id ?? $user->cliente_id,
+            '2fa_guard' => $guard,
+            '2fa_verified' => false,
+        ]);
+
+        alert()->success('Éxito', 'Código 2FA enviado a tu correo');
+        return redirect()->route('2fa.verify');
     }
 
     public function verify2FA(Request $request)
@@ -89,6 +72,7 @@ class AuthController extends Controller
 
         if (
             !$user ||
+            !$user->two_factor_expires_at || // 👈 evita error si es null
             now()->greaterThan($user->two_factor_expires_at) ||
             $user->two_factor_code !== $request->code
         ) {
@@ -98,9 +82,10 @@ class AuthController extends Controller
             return redirect()->route('login');
         }
 
-        $user->two_factor_code = null;
-        $user->two_factor_expires_at = null;
-        $user->save();
+        $user->update([
+            'two_factor_code' => null,
+            'two_factor_expires_at' => null,
+        ]);
 
         Auth::guard($guard)->login($user);
         session()->forget('2fa_id');
@@ -151,7 +136,6 @@ class AuthController extends Controller
             return response()->json(['errors' => ['general' => ['Error inesperado. Intenta nuevamente.']]], 500);
         }
     }
-
 
     public function logout(Request $request)
     {

@@ -239,7 +239,7 @@ default => 'bg-secondary',
     </div>
 </div>
 
-@include('admin.pedidos.modales.estado')
+@include('modals.admin.estado')
 
 @push('scripts')
 <script>

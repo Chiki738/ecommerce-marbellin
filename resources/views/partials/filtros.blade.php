@@ -1,8 +1,20 @@
 @php
 $filtros = [
-['label' => 'Categorías', 'name' => 'categorias', 'items' => \App\Models\Categoria::pluck('nombre', 'categoria_id')],
-['label' => 'Colores', 'name' => 'colores', 'items' => collect(['Blanco', 'Negro', 'Rojo', 'Amarillo'])->mapWithKeys(fn($c) => [$c => $c])],
-['label' => 'Tallas', 'name' => 'tallas', 'items' => collect(['S', 'M', 'L', 'XL'])->mapWithKeys(fn($t) => [$t => $t])],
+[
+'label' => 'Categorías',
+'name' => 'categorias',
+'items' => \App\Models\Categoria::pluck('nombre', 'categoria_id')
+],
+[
+'label' => 'Colores',
+'name' => 'colores',
+'items' => collect(['Blanco', 'Negro', 'Rojo', 'Amarillo'])->mapWithKeys(fn($c) => [$c => $c])
+],
+[
+'label' => 'Tallas',
+'name' => 'tallas',
+'items' => collect(['S', 'M', 'L', 'XL'])->mapWithKeys(fn($t) => [$t => $t])
+],
 ];
 @endphp
 
@@ -13,6 +25,7 @@ $filtros = [
     <div class="card-body">
         <form method="GET" action="{{ route('productos.filtrar') }}">
             @foreach ($filtros as $filtro)
+            @php $seleccionados = request($filtro['name'], []); @endphp
             <div class="mb-3">
                 <strong class="form-label">{{ $filtro['label'] }}</strong>
                 @foreach ($filtro['items'] as $valor => $texto)
@@ -23,8 +36,10 @@ $filtros = [
                         name="{{ $filtro['name'] }}[]"
                         value="{{ $valor }}"
                         id="{{ $filtro['name'] . $valor }}"
-                        {{ in_array($valor, request($filtro['name'], [])) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="{{ $filtro['name'] . $valor }}">{{ $texto }}</label>
+                        {{ in_array($valor, $seleccionados) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="{{ $filtro['name'] . $valor }}">
+                        {{ $texto }}
+                    </label>
                 </div>
                 @endforeach
             </div>

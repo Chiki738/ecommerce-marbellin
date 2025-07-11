@@ -14,6 +14,29 @@
     </div>
     @endif
 
+    @php
+    $estados = ['Todas', 'Pendiente', 'Aprobado', 'Rechazado', 'Cambiado'];
+    $colores = [
+    'Todas' => 'btn-dark',
+    'Pendiente' => 'btn-warning text-dark',
+    'Aprobado' => 'btn-success',
+    'Rechazado' => 'btn-danger',
+    'Cambiado' => 'btn-primary'
+    ];
+    @endphp
+
+    <div class="mb-4 d-flex flex-wrap gap-2">
+        @foreach ($estados as $estadoBtn)
+        <a href="{{ route('admin.cambios.index', ['estado' => $estadoBtn]) }}"
+            class="btn {{ $colores[$estadoBtn] }} {{ (request('estado') ?? 'Todas') === $estadoBtn ? 'active shadow' : '' }}">
+            {{ $estadoBtn }}
+            ({{ $estadoBtn === 'Todas' 
+                ? \App\Models\CambioProducto::count() 
+                : \App\Models\CambioProducto::where('estado', $estadoBtn)->count() }})
+        </a>
+        @endforeach
+    </div>
+
     <div class="table-responsive">
         <table class="table table-bordered table-hover align-middle text-center">
             <thead class="table-primary">
@@ -29,7 +52,7 @@
             </thead>
             <tbody>
                 @forelse ($cambios as $solicitud)
-                <tr>
+                <tr id="fila-cambio-{{ $solicitud->id }}">
                     <td>#{{ $solicitud->id }}</td>
                     <td>{{ $solicitud->created_at->format('d/m/Y H:i') }}</td>
                     <td>
@@ -45,22 +68,32 @@
                     <td class="text-start">
                         <span class="text-muted fst-italic">{{ $solicitud->comentario_cliente ?? '—' }}</span>
                     </td>
-                    <td>
-                        @if ($solicitud->estado === null || $solicitud->estado === 'Pendiente')
+                    <td class="estado-solicitud">
+                        @switch($solicitud->estado)
+
+                        @case('Pendiente')
                         <span class="badge bg-warning text-dark">
                             <i class="fas fa-clock me-1"></i>Pendiente
                         </span>
-                        @elseif ($solicitud->estado === 'Cambiado')
+                        @break
+                        @case('Aprobado')
                         <span class="badge bg-success">
-                            <i class="fas fa-check-circle me-1"></i>Cambiado
+                            <i class="fas fa-check-circle me-1"></i>Aprobado
                         </span>
-                        @elseif ($solicitud->estado === 'Rechazado')
+                        @break
+                        @case('Rechazado')
                         <span class="badge bg-danger">
                             <i class="fas fa-times-circle me-1"></i>Rechazado
                         </span>
-                        @else
-                        <span class="badge bg-secondary">{{ $solicitud->estado }}</span>
-                        @endif
+                        @break
+                        @case('Cambiado')
+                        <span class="badge bg-primary">
+                            <i class="fas fa-cogs me-1"></i>Cambiado
+                        </span>
+                        @break
+                        @default
+                        <span class="badge bg-secondary">{{ $solicitud->estado ?? 'Sin estado' }}</span>
+                        @endswitch
                     </td>
                     <td>
                         <button
@@ -79,12 +112,18 @@
             </tbody>
         </table>
     </div>
+
+    <div class="d-flex flex-column align-items-center mt-3">
+        <p class="text-muted mb-1">
+            Mostrando {{ $cambios->firstItem() }} al {{ $cambios->lastItem() }} de {{ $cambios->total() }} resultados
+        </p>
+        {{ $cambios->withQueryString()->links() }}
+    </div>
 </div>
 
-<!-- Modal separado -->
-@include('admin.pedidos.modales.modalDevolucionesAdmin')
+@include('modals.admin.modalDevolucionesAdmin')
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/devolucionesAdmin.js') }}"></script>
+<script src="{{ asset('js/admin/devolucionesAdmin.js') }}"></script>
 @endpush

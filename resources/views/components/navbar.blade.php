@@ -1,3 +1,15 @@
+@php
+$navItems = [
+['name' => 'Inicio', 'url' => url('/'), 'icon' => 'fa-house', 'active' => request()->is('/')],
+['name' => 'Catálogo', 'url' => route('productos.vista'), 'icon' => 'fa-bag-shopping', 'active' => request()->is('productos')],
+];
+
+if (auth()->check()) {
+$navItems[] = ['name' => 'Carrito', 'url' => route('carrito'), 'icon' => 'fa-cart-shopping', 'active' => request()->is('carrito')];
+$navItems[] = ['name' => 'Historial', 'url' => route('client.historial'), 'icon' => 'fa-clock-rotate-left', 'active' => request()->is('historial')];
+}
+@endphp
+
 <nav class="navbar navbar-expand-lg bg-light position-relative" data-bs-theme="light">
     <div class="container-fluid">
         <a class="navbar-brand" href="{{ url('/') }}">
@@ -11,22 +23,10 @@
         <!-- Navbar grande -->
         <div class="collapse navbar-collapse d-none d-lg-flex" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                @php
-                $navItems = [
-                ['name' => 'Inicio', 'url' => url('/'), 'icon' => 'fa-house', 'active' => request()->is('/')],
-                ['name' => 'Catálogo', 'url' => route('productos.vista'), 'icon' => 'fa-bag-shopping', 'active' => request()->is('productos')],
-                ];
-                if (auth()->check()) {
-                $navItems[] = ['name' => 'Carrito', 'url' => route('carrito'), 'icon' => 'fa-cart-shopping', 'active' => request()->is('carrito')];
-                $navItems[] = ['name' => 'Historial', 'url' => route('client.historial'), 'icon' => 'fa-clock-rotate-left', 'active' => request()->is('historial')];
-                }
-                @endphp
-
                 @foreach($navItems as $item)
                 <li class="nav-item">
                     <a class="nav-link {{ $item['active'] ? 'text-black' : 'text-secondary' }}" href="{{ $item['url'] }}">
                         <i class="fa-solid {{ $item['icon'] }}"></i>&nbsp;{{ $item['name'] }}
-                        @if($item['name'] === 'Carrito') @endif
                     </a>
                 </li>
                 @endforeach
@@ -39,14 +39,14 @@
             </form>
 
             <!-- Login / Logout -->
-            @guest
-            <a href="{{ url('/acceso') }}" class="btn btn-outline-primary ms-3">Login / Signup</a>
-            @else
+            @auth
             <form method="POST" action="{{ route('logout') }}" class="d-inline ms-3">
                 @csrf
                 <button type="submit" class="btn btn-outline-danger">Cerrar sesión</button>
             </form>
-            @endguest
+            @else
+            <a href="{{ url('/acceso') }}" class="btn btn-outline-primary ms-3">Login / Signup</a>
+            @endauth
         </div>
 
         <!-- Navbar móvil -->
@@ -76,18 +76,18 @@
                 </form>
 
                 <!-- Login / Logout -->
-                @guest
-                <a href="{{ url('/acceso') }}" class="btn btn-outline-primary ms-3">Login / Signup</a>
-                @else
+                @auth
                 <form method="POST" action="{{ route('logout') }}" class="d-inline ms-3">
                     @csrf
                     <button type="submit" class="btn btn-outline-danger">Cerrar sesión</button>
                 </form>
-                @endguest
+                @else
+                <a href="{{ url('/acceso') }}" class="btn btn-outline-primary ms-3">Login / Signup</a>
+                @endauth
             </div>
         </div>
     </div>
 </nav>
 
 <link rel="stylesheet" href="{{ asset('css/nav.css') }}">
-<script src="{{ asset('js/buscador.js') }}"></script>
+<script src="{{ asset('js/buscadorNav.js') }}"></script>

@@ -45,30 +45,30 @@ document.addEventListener("DOMContentLoaded", () => {
 function procesarSolicitud() {
     const id = document
         .getElementById("modalCodigo")
-        .textContent.replace("#", "");
+        .textContent.replace("#", "")
+        .trim();
     const estadoSeleccionado = document.getElementById("accionProcesar").value;
     const comentarioAdmin = document.getElementById("comentarioAdmin").value;
-
-    const producto = document.getElementById("nuevoProducto");
-    const talla = document.getElementById("nuevaTalla");
-    const color = document.getElementById("nuevoColor");
-
-    const productoId = producto?.selectedOptions[0]?.dataset?.id ?? "";
-    const tallaValor = talla?.value ?? "";
-    const colorValor = color?.value ?? "";
 
     let varianteNuevaId = null;
 
     if (estadoSeleccionado === "cambiar") {
-        if (!productoId || !tallaValor || !colorValor) {
+        const productoId = document
+            .getElementById("nuevoProducto")
+            .value.trim();
+        const talla = document.getElementById("nuevaTalla").value.trim();
+        const color = document.getElementById("nuevoColor").value.trim();
+
+        if (!productoId || !talla || !color) {
             Swal.fire(
                 "Faltan datos",
-                "Completa todos los campos del nuevo producto.",
+                "Debes seleccionar producto, talla y color para procesar el cambio.",
                 "warning"
             );
             return;
         }
-        varianteNuevaId = `${productoId}-${tallaValor}-${colorValor}`;
+
+        varianteNuevaId = `${productoId}-${talla}-${color}`;
     }
 
     fetch(`/admin/cambios/${id}/procesar`, {
@@ -80,32 +80,27 @@ function procesarSolicitud() {
         },
         body: JSON.stringify({
             estado:
-                estadoSeleccionado === "aprobar"
+                estadoSeleccionado === "cambiar"
+                    ? "Cambiado"
+                    : estadoSeleccionado === "aprobar"
                     ? "Aprobado"
-                    : estadoSeleccionado === "rechazar"
-                    ? "Rechazado"
-                    : "Cambiado",
+                    : "Rechazado",
             comentario_admin: comentarioAdmin,
             variante_nueva_id: varianteNuevaId,
-            notificar: true, // 👈 esto permite que se envíe el correo
+            notificar: true,
         }),
     })
-        .then((res) => {
-            if (!res.ok) throw new Error("Error al procesar solicitud");
-            return res.json();
-        })
+        .then((res) => res.json())
         .then((data) => {
-            Swal.fire({
-                icon: "success",
-                title: "¡Procesado!",
-                text: data.message,
-            }).then(() => location.reload());
+            Swal.fire("Listo", data.message, "success").then(() => {
+                location.reload();
+            });
         })
         .catch(() => {
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: "Ocurrió un problema al procesar la solicitud.",
-            });
+            Swal.fire(
+                "Error",
+                "Ocurrió un error al procesar la solicitud.",
+                "error"
+            );
         });
 }

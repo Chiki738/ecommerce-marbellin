@@ -4,17 +4,19 @@
         <form id="formEditarProducto" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
+
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Editar Producto</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
+
                 <div class="modal-body">
                     <input type="hidden" name="codigo" id="codigo" readonly>
 
                     @foreach ([
                     ['label' => 'Nombre', 'type' => 'text', 'name' => 'nombre'],
-                    ['label' => 'Precio', 'type' => 'number', 'name' => 'precio', 'step' => '0.01'],
+                    ['label' => 'Precio', 'type' => 'number', 'name' => 'precio', 'step' => '0.01']
                     ] as $input)
                     <label for="{{ $input['name'] }}">{{ $input['label'] }}</label>
                     <input
@@ -44,6 +46,7 @@
                         <img src="" alt="Imagen actual" style="max-width: 100%; max-height: 150px;">
                     </div>
                 </div>
+
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Guardar cambios</button>
@@ -54,5 +57,5 @@
 </div>
 
 @push('scripts')
-<script src="{{ asset('js/productosAdmin/editarProducto.js') }}"></script>
+<script src="{{ asset('js/admin/editarProducto.js') }}"></script>
 @endpush

@@ -7,22 +7,22 @@
 
     @php
     $campos = [
-    'email' => ['Correo electrónico', 'email', 'correo@example.com', 'Ingresa un correo válido.'],
-    'password' => ['Contraseña', 'password', 'Contraseña', 'La contraseña es obligatoria.']
+    'email' => ['label' => 'Correo electrónico', 'type' => 'email', 'placeholder' => 'correo@example.com', 'feedback' => 'Ingresa un correo válido.'],
+    'password' => ['label' => 'Contraseña', 'type' => 'password', 'placeholder' => 'Contraseña', 'feedback' => 'La contraseña es obligatoria.']
     ];
     @endphp
 
-    @foreach ($campos as $name => [$label, $type, $placeholder, $invalid])
+    @foreach ($campos as $name => $campo)
     <div class="form-floating mb-{{ $loop->last ? 4 : 3 }}">
         <input
-            type="{{ $type }}"
+            type="{{ $campo['type'] }}"
             name="{{ $name }}"
             id="login{{ ucfirst($name) }}"
             class="form-control"
-            placeholder="{{ $placeholder }}"
+            placeholder="{{ $campo['placeholder'] }}"
             required>
-        <label for="login{{ ucfirst($name) }}">{{ $label }}</label>
-        <div class="invalid-feedback">{{ $invalid }}</div>
+        <label for="login{{ ucfirst($name) }}">{{ $campo['label'] }}</label>
+        <div class="invalid-feedback">{{ $campo['feedback'] }}</div>
     </div>
     @endforeach
 

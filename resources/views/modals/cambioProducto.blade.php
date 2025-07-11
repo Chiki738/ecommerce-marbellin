@@ -1,4 +1,4 @@
-{{-- cambioProducto.blade.php --}}
+{{-- resources/views/modals/cambioProducto.blade.php --}}
 <div class="modal fade" id="modalSolicitudCambio" tabindex="-1" aria-labelledby="cambioLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -36,36 +36,41 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    document.getElementById('formCambioProducto').addEventListener('submit', async function(e) {
-        e.preventDefault();
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('formCambioProducto');
+        const modalElement = document.getElementById('modalSolicitudCambio');
 
-        const form = e.target;
-        const formData = new FormData(form);
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
 
-        try {
-            const response = await fetch(`{{ route('cambio.solicitar') }}`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': formData.get('_token')
-                },
-                body: formData
-            });
+            try {
+                const response = await fetch(`{{ route('cambio.solicitar') }}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': formData.get('_token')
+                    },
+                    body: formData
+                });
 
-            const data = await response.json();
+                const result = await response.json();
 
-            if (response.ok) {
-                Swal.fire('¡Éxito!', data.message || 'Cambio solicitado correctamente.', 'success');
-                form.reset();
-                const modal = bootstrap.Modal.getInstance(document.getElementById('modalSolicitudCambio'));
-                modal.hide();
-            } else {
-                Swal.fire('Error', data.message || 'Ocurrió un error.', 'error');
+                Swal.fire({
+                    icon: response.ok ? 'success' : 'error',
+                    title: response.ok ? '¡Éxito!' : 'Error',
+                    text: result.message || (response.ok ? 'Cambio solicitado correctamente.' : 'Ocurrió un error.')
+                });
+
+                if (response.ok) {
+                    form.reset();
+                    bootstrap.Modal.getInstance(modalElement)?.hide();
+                }
+
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'Error de red o del servidor.', 'error');
             }
-
-        } catch (error) {
-            console.error(error);
-            Swal.fire('Error', 'Error de red o del servidor.', 'error');
-        }
+        });
     });
 </script>
 @endpush

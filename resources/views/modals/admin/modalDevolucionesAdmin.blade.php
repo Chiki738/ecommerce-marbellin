@@ -108,8 +108,8 @@
                                 <label class="form-label">Nuevo Producto</label>
                                 <select class="form-select" id="nuevoProducto">
                                     <option value="">Seleccionar producto...</option>
-                                    @foreach($productos as $producto)
-                                    <option value="{{ $producto->nombre }}" data-id="{{ $producto->id }}">{{ $producto->nombre }}</option>
+                                    @foreach($productosModal as $producto)
+                                    <option value="{{ $producto->codigo }}">{{ $producto->nombre }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -167,48 +167,4 @@
         document.getElementById('seccionVariantes').style.display = (accion === 'cambiar') ? 'block' : 'none';
         document.getElementById('comentarioAdminSeccion').style.display = (accion === 'rechazar' || accion === 'cambiar') ? 'block' : 'none';
     });
-
-    function procesarSolicitud() {
-        const idCambio = document.getElementById('modalProcesar').dataset.id;
-        const estadoSeleccionado = document.getElementById('accionProcesar').value;
-        const comentarioAdmin = document.getElementById('comentarioAdmin').value;
-        let varianteNuevaId = null;
-
-        if (estadoSeleccionado === 'cambiar') {
-            const productoId = document.querySelector('#nuevoProducto option:checked')?.dataset.id;
-            const talla = document.getElementById('nuevaTalla').value;
-            const color = document.getElementById('nuevoColor').value;
-
-            if (!productoId || !talla || !color) {
-                Swal.fire('Faltan datos', 'Completa todos los campos del nuevo producto.', 'warning');
-                return;
-            }
-
-            varianteNuevaId = productoId + '-' + talla + '-' + color;
-        }
-
-        fetch(`/admin/cambios/${idCambio}/procesar`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    estado: estadoSeleccionado === 'aprobar' ? 'Aprobado' : estadoSeleccionado === 'rechazar' ? 'Rechazado' : 'Cambiado',
-                    comentario_admin: comentarioAdmin,
-                    variante_nueva_id: varianteNuevaId,
-                    notificar: true // 👈 agrega esto
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                Swal.fire('Éxito', data.message, 'success').then(() => {
-                    location.reload();
-                });
-            })
-            .catch(err => {
-                console.error(err);
-                Swal.fire('Error', 'No se pudo procesar la solicitud.', 'error');
-            });
-    }
 </script>

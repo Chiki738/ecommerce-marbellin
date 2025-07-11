@@ -2,11 +2,7 @@
 <p>Detalles de tu pedido <strong>#{{ $pedido->id }}</strong></p>
 
 @php
-$productosAgrupados = [];
-foreach ($pedido->detalles as $detalle) {
-$nombre = $detalle->producto->nombre;
-$productosAgrupados[$nombre][] = $detalle;
-}
+$productosAgrupados = $pedido->detalles->groupBy(fn($d) => $d->producto->nombre);
 @endphp
 
 @foreach ($productosAgrupados as $nombreProducto => $detalles)
@@ -14,11 +10,9 @@ $productosAgrupados[$nombre][] = $detalle;
 <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
     <thead>
         <tr>
-            <th style="border: 1px solid #ccc; padding: 6px;">Color</th>
-            <th style="border: 1px solid #ccc; padding: 6px;">Talla</th>
-            <th style="border: 1px solid #ccc; padding: 6px;">SKU</th>
-            <th style="border: 1px solid #ccc; padding: 6px;">Cantidad</th>
-            <th style="border: 1px solid #ccc; padding: 6px;">Subtotal</th>
+            @foreach (['Color', 'Talla', 'SKU', 'Cantidad', 'Subtotal'] as $col)
+            <th style="border: 1px solid #ccc; padding: 6px;">{{ $col }}</th>
+            @endforeach
         </tr>
     </thead>
     <tbody>
@@ -40,5 +34,7 @@ $productosAgrupados[$nombre][] = $detalle;
 <hr>
 
 <h3><strong>¡IMPORTANTE!</strong></h3>
-<p>Solo se permiten <strong>cambios por errores en el envío o productos defectuosos</strong>, dentro de los <strong>2 días hábiles</strong> después de la entrega.</p>
+<p>
+    Solo se permiten <strong>cambios por errores en el envío o productos defectuosos</strong>, dentro de los <strong>2 días hábiles</strong> después de la entrega.
+</p>
 <p><strong>No se aceptan devoluciones</strong> por ningún motivo una vez vencido ese plazo.</p>

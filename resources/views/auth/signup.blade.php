@@ -17,38 +17,34 @@
     @endphp
 
     <div class="row g-3">
-        @foreach ($campos as $campo)
-        <div class="col-sm-{{ $campo['col'] }} form-floating">
-            <input type="{{ $campo['type'] }}"
-                name="{{ $campo['name'] }}"
-                id="{{ $campo['name'] }}"
-                class="form-control"
-                placeholder="{{ $campo['label'] }}"
-                required
-                autocomplete="off">
-            <label for="{{ $campo['name'] }}">{{ $campo['label'] }}</label>
+        @foreach ($campos as $c)
+        <div class="col-sm-{{ $c['col'] }} form-floating">
+            <input type="{{ $c['type'] }}" name="{{ $c['name'] }}" id="{{ $c['name'] }}"
+                class="form-control" placeholder="{{ $c['label'] }}" required autocomplete="off">
+            <label for="{{ $c['name'] }}">{{ $c['label'] }}</label>
         </div>
         @endforeach
     </div>
 
-    {{-- Provincia y Distrito --}}
     <div class="row mt-3">
-        <div class="col-12">
-            <label for="provincia" class="form-label">Provincia</label>
-            <select id="provincia" name="provincia" class="form-select" required>
-                <option value="">Seleccionar Provincia</option>
-                @foreach($provincias as $provincia)
-                <option value="{{ $provincia->provincia_id }}">{{ $provincia->nombre }}</option>
+        @php
+        $selects = [
+        'provincia' => ['label' => 'Provincia', 'options' => $provincias, 'id' => 'provincia', 'optionKey' => 'provincia_id'],
+        'distrito' => ['label' => 'Distrito', 'options' => [], 'id' => 'distrito']
+        ];
+        @endphp
+
+        @foreach ($selects as $name => $config)
+        <div class="col-12 mt-{{ $loop->first ? 0 : 3 }}">
+            <label for="{{ $config['id'] }}" class="form-label">{{ $config['label'] }}</label>
+            <select id="{{ $config['id'] }}" name="{{ $name }}" class="form-select" required>
+                <option value="">Seleccionar {{ $config['label'] }}</option>
+                @foreach ($config['options'] ?? [] as $opt)
+                <option value="{{ $opt[$config['optionKey']] ?? '' }}">{{ $opt->nombre ?? '' }}</option>
                 @endforeach
             </select>
         </div>
-
-        <div class="col-12 mt-3">
-            <label for="distrito" class="form-label">Distrito</label>
-            <select id="distrito" name="distrito" class="form-select" required>
-                <option value="">Seleccionar Distrito</option>
-            </select>
-        </div>
+        @endforeach
     </div>
 
     <button class="btn btn-success w-100 py-2 mt-4">Registrarse</button>

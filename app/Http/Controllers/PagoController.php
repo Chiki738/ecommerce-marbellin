@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ComprobantePagoMail;
 use App\Models\{Pedido, User};
@@ -12,43 +11,35 @@ class PagoController extends Controller
 {
     public function exito(Request $request)
     {
-        $pedidoId = $request->get('pedido_id');
+        $pedido = Pedido::with(['detalles.variante', 'detalles.producto', 'cliente'])
+            ->find($request->get('pedido_id'));
 
-        if (!$pedidoId) {
-            return response()->json(['success' => false, 'message' => 'ID de pedido no proporcionado']);
+        if (!$pedido || $pedido->estado_id !== 1) {
+            return response()->json(['success' => false, 'message' => 'Pedido no encontrado o ya procesado']);
         }
 
-        // Buscar el pedido y actualizar estado
-        $pedido = Pedido::with(['detalles.variante', 'detalles.producto', 'cliente'])->find($pedidoId);
+        $pedido->estado_id = 2; // Procesando
+        $pedido->save();
 
-        if ($pedido && $pedido->estado_id == 1) { // 1 = pendiente
-            $pedido->estado_id = 2; // 2 = procesando
-            $pedido->save();
-
-            // Restar stock a cada variante del pedido
-            foreach ($pedido->detalles as $detalle) {
-                $variante = $detalle->variante;
-                if ($variante) {
-                    $variante->cantidad -= $detalle->cantidad;
-                    if ($variante->cantidad < 0) $variante->cantidad = 0;
-                    $variante->save();
-                }
+        // Restar stock
+        foreach ($pedido->detalles as $detalle) {
+            if ($detalle->variante) {
+                $detalle->variante->cantidad = max(0, $detalle->variante->cantidad - $detalle->cantidad);
+                $detalle->variante->save();
             }
-
-            // Enviar comprobante al cliente
-            if ($pedido->cliente && $pedido->cliente->email) {
-                Mail::to($pedido->cliente->email)->send(new ComprobantePagoMail($pedido));
-            }
-
-            return response()->json(['success' => true]);
         }
 
-        return response()->json(['success' => false, 'message' => 'Pedido no encontrado o ya procesado']);
+        // Enviar comprobante
+        if ($pedido->cliente?->email) {
+            Mail::to($pedido->cliente->email)->send(new ComprobantePagoMail($pedido));
+        }
+
+        return response()->json(['success' => true]);
     }
 
     public function verificarStock($pedidoId)
     {
-        $pedido = Pedido::with('detalles.variante', 'detalles.producto')->find($pedidoId);
+        $pedido = Pedido::with(['detalles.variante', 'detalles.producto'])->find($pedidoId);
 
         if (!$pedido) {
             return response()->json(['success' => false, 'message' => 'Pedido no encontrado.']);
@@ -58,19 +49,22 @@ class PagoController extends Controller
 
         foreach ($pedido->detalles as $detalle) {
             $variante = $detalle->variante;
+
             if (!$variante) continue;
 
+            $producto = $detalle->producto->nombre;
+            $talla = $variante->talla;
+            $color = $variante->color;
+
             if ($variante->cantidad <= 0) {
-                $errores[] = "Producto '{$detalle->producto->nombre}' con talla '{$variante->talla}' y color '{$variante->color}' tiene stock agotado.";
+                $errores[] = "Producto '$producto' con talla '$talla' y color '$color' tiene stock agotado.";
             } elseif ($detalle->cantidad > $variante->cantidad) {
-                $errores[] = "Producto '{$detalle->producto->nombre}' con talla '{$variante->talla}' y color '{$variante->color}' tiene stock insuficiente.";
+                $errores[] = "Producto '$producto' con talla '$talla' y color '$color' tiene stock insuficiente.";
             }
         }
 
-        if (!empty($errores)) {
-            return response()->json(['success' => false, 'errores' => $errores]);
-        }
-
-        return response()->json(['success' => true]);
+        return empty($errores)
+            ? response()->json(['success' => true])
+            : response()->json(['success' => false, 'errores' => $errores]);
     }
 }

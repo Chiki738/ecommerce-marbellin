@@ -13,7 +13,7 @@ class ProductoController extends Controller
         return view('admin.productosAdmin', [
             'productos' => Producto::with('categoria')->orderBy('nombre')->get(),
             'variantes' => VarianteProducto::all(),
-            'categorias' => Categoria::all()
+            'categorias' => Categoria::all(),
         ]);
     }
 
@@ -29,22 +29,9 @@ class ProductoController extends Controller
         ]);
 
         $data['imagen'] = $this->subirImagenCloudinary($request);
-
         $producto = Producto::create($data);
 
-        $tallas = ['S', 'M', 'L', 'XL'];
-        $colores = ['Negro', 'Blanco', 'Rojo', 'Amarillo'];
-
-        foreach ($tallas as $talla) {
-            foreach ($colores as $color) {
-                VarianteProducto::create([
-                    'producto_codigo' => $producto->codigo,
-                    'talla' => $talla,
-                    'color' => $color,
-                    'cantidad' => 17,
-                ]);
-            }
-        }
+        $this->generarVariantes($producto->codigo);
 
         return redirect()->route('admin.productosAdmin')->with('success', 'Producto y variantes generadas automáticamente');
     }
@@ -73,50 +60,45 @@ class ProductoController extends Controller
 
         $producto->update($data);
 
-        return response()->json(['message' => 'Producto actualizado correctamente']); // ✅ Siempre responde
+        return response()->json(['message' => 'Producto actualizado correctamente']);
     }
 
     public function mostrarProductosPublico(Request $request)
     {
-        $buscar = $request->input('buscar');
-        $query = Producto::query();
-
-        if ($buscar) {
-            $terminos = explode(' ', $buscar);
-            $query->where(function ($q) use ($terminos) {
-                foreach ($terminos as $palabra) {
-                    $q->orWhere('nombre', 'LIKE', "%$palabra%")
-                        ->orWhere('descripcion', 'LIKE', "%$palabra%");
-                }
-            });
-        }
+        $productos = Producto::with('categoria')
+            ->when($request->buscar, function ($query, $buscar) {
+                $terminos = explode(' ', $buscar);
+                $query->where(function ($q) use ($terminos) {
+                    foreach ($terminos as $palabra) {
+                        $q->orWhere('nombre', 'LIKE', "%$palabra%")
+                            ->orWhere('descripcion', 'LIKE', "%$palabra%");
+                    }
+                });
+            })->paginate(6);
 
         return view('producto.productos', [
-            'productos' => $query->with('categoria')->paginate(6),
+            'productos' => $productos,
             'categorias' => Categoria::all(),
-            'colores' => VarianteProducto::select('color')->distinct()->pluck('color'),
-            'tallas' => VarianteProducto::select('talla')->distinct()->pluck('talla'),
+            'colores' => VarianteProducto::distinct()->pluck('color'),
+            'tallas' => VarianteProducto::distinct()->pluck('talla'),
         ]);
     }
 
     public function filtrar(Request $request)
     {
-        $colores = $request->input('colores', []);
-        $tallas = $request->input('tallas', []);
-        $categorias = $request->input('categorias', []);
+        $filtros = $request->only(['colores', 'tallas', 'categorias']);
 
-        $productos = Producto::query()
-            ->whereHas('variantes', function ($query) use ($colores, $tallas) {
-                $query->where('cantidad', '>', 0)
-                    ->when($colores, fn($q) => $q->whereIn('color', $colores))
-                    ->when($tallas, fn($q) => $q->whereIn('talla', $tallas));
+        $productos = Producto::with(['variantes' => function ($q) use ($filtros) {
+            $q->where('cantidad', '>', 0)
+                ->when($filtros['colores'] ?? [], fn($q) => $q->whereIn('color', $filtros['colores']))
+                ->when($filtros['tallas'] ?? [], fn($q) => $q->whereIn('talla', $filtros['tallas']));
+        }])
+            ->whereHas('variantes', function ($q) use ($filtros) {
+                $q->where('cantidad', '>', 0)
+                    ->when($filtros['colores'] ?? [], fn($q) => $q->whereIn('color', $filtros['colores']))
+                    ->when($filtros['tallas'] ?? [], fn($q) => $q->whereIn('talla', $filtros['tallas']));
             })
-            ->when($categorias, fn($q) => $q->whereIn('categoria_id', $categorias))
-            ->with(['variantes' => function ($query) use ($colores, $tallas) {
-                $query->where('cantidad', '>', 0)
-                    ->when($colores, fn($q) => $q->whereIn('color', $colores))
-                    ->when($tallas, fn($q) => $q->whereIn('talla', $tallas));
-            }])
+            ->when($filtros['categorias'] ?? [], fn($q) => $q->whereIn('categoria_id', $filtros['categorias']))
             ->paginate(6);
 
         return view('producto.productos', [
@@ -128,6 +110,7 @@ class ProductoController extends Controller
     public function detalleProducto($codigo)
     {
         $producto = Producto::with(['variantes', 'categoria'])->where('codigo', $codigo)->firstOrFail();
+
         return view('producto.detalle', [
             'producto' => $producto,
             'categorias' => Categoria::all()
@@ -144,10 +127,9 @@ class ProductoController extends Controller
             $puntaje = match (true) {
                 $nombre === $query => 3,
                 str_contains($nombre, $query) => 2,
-                collect($terminos)->every(fn($p) => str_contains($nombre, $p)) => 1,
+                collect($terminos)->every(fn($t) => str_contains($nombre, $t)) => 1,
                 default => 0,
             };
-
             return compact('producto', 'puntaje');
         });
 
@@ -162,6 +144,7 @@ class ProductoController extends Controller
         );
     }
 
+    // Funciones auxiliares
     private function normalizar($cadena)
     {
         return strtolower(preg_replace('~[^\pL\d]+~u', ' ', iconv('UTF-8', 'ASCII//TRANSLIT', $cadena)));
@@ -187,5 +170,19 @@ class ProductoController extends Controller
                 'overwrite' => false,
             ]
         )['secure_url'];
+    }
+
+    private function generarVariantes(string $codigo): void
+    {
+        foreach (['S', 'M', 'L', 'XL'] as $talla) {
+            foreach (['Negro', 'Blanco', 'Rojo', 'Amarillo'] as $color) {
+                VarianteProducto::create([
+                    'producto_codigo' => $codigo,
+                    'talla' => $talla,
+                    'color' => $color,
+                    'cantidad' => 17,
+                ]);
+            }
+        }
     }
 }

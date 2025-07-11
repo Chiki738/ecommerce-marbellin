@@ -1,18 +1,17 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("formSign");
+    const emailInput = document.getElementById("email");
     const provinciaSelect = document.getElementById("provincia");
     const distritoSelect = document.getElementById("distrito");
-    const emailInput = document.getElementById("email");
-    const form = document.getElementById("formSign");
 
     let correoValido = false;
 
-    // Mostrar ayuda visual del correo
-    const emailHelp = Object.assign(document.createElement("small"), {
-        className: "text-danger d-none",
-    });
+    // Crear mensaje de ayuda para el correo
+    const emailHelp = document.createElement("small");
+    emailHelp.className = "text-danger d-none";
     emailInput.parentNode.appendChild(emailHelp);
 
-    // Validar correo con API externa
+    // Validación de correo con API externa
     emailInput.addEventListener("blur", async () => {
         const email = emailInput.value.trim();
         if (!email) return;
@@ -41,24 +40,24 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Cargar distritos al seleccionar provincia
+    // Cargar distritos al cambiar provincia
     provinciaSelect.addEventListener("change", async () => {
-        const provinciaId = provinciaSelect.value;
+        const id = provinciaSelect.value;
         distritoSelect.innerHTML = `<option value="">${
-            provinciaId ? "Cargando..." : "Seleccionar Distrito"
+            id ? "Cargando..." : "Seleccionar Distrito"
         }</option>`;
-        if (!provinciaId) return;
+        if (!id) return;
 
         try {
-            const res = await fetch(`/provincias/${provinciaId}/distritos`);
-            const data = await res.json();
+            const res = await fetch(`/provincias/${id}/distritos`);
+            const distritos = await res.json();
 
             distritoSelect.innerHTML =
                 '<option value="">Seleccionar Distrito</option>';
-            data.forEach((d) => {
+            distritos.forEach(({ distrito_id, nombre }) => {
                 distritoSelect.insertAdjacentHTML(
                     "beforeend",
-                    `<option value="${d.distrito_id}">${d.nombre}</option>`
+                    `<option value="${distrito_id}">${nombre}</option>`
                 );
             });
         } catch {
@@ -67,31 +66,28 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Validación completa del formulario y envío por AJAX
+    // Validación y envío del formulario
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
-        e.stopPropagation();
         form.classList.add("was-validated");
 
         if (!form.checkValidity() || !correoValido) {
-            let mensaje = "";
+            let errores = [];
+
             if (!form.checkValidity())
-                mensaje += "Completa todos los campos correctamente.<br>";
+                errores.push("Completa todos los campos correctamente.");
             if (!correoValido) {
-                mensaje += "Debes ingresar un correo válido de Gmail.";
+                errores.push("Debes ingresar un correo válido de Gmail.");
                 emailHelp.classList.remove("d-none");
             }
 
-            Swal.fire({
+            return Swal.fire({
                 icon: "error",
                 title: "Error al registrar",
-                html: mensaje,
+                html: errores.join("<br>"),
                 confirmButtonText: "Entendido",
             });
-            return;
         }
-
-        const formData = new FormData(form);
 
         try {
             const res = await fetch("/acceso/signup", {
@@ -101,7 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         'meta[name="csrf-token"]'
                     ).content,
                 },
-                body: formData,
+                body: new FormData(form),
             });
 
             const data = await res.json();
@@ -112,9 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     title: "Registro exitoso",
                     text: "Verifica tu correo antes de continuar.",
                     confirmButtonText: "Aceptar",
-                }).then(() => {
-                    window.location.href = data.redirect;
-                });
+                }).then(() => (window.location.href = data.redirect));
             } else {
                 Swal.fire({
                     icon: "error",
@@ -123,7 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     confirmButtonText: "Entendido",
                 });
             }
-        } catch (err) {
+        } catch {
             Swal.fire({
                 icon: "error",
                 title: "Error inesperado",

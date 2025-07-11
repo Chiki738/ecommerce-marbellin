@@ -20,7 +20,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{ Request::is('admin/reclamos') ? 'fw-bold' : '' }}" href="{{ route('admin.reclamos') }}">
+                    <a class="nav-link {{ Request::is('admin/cambios') ? 'fw-bold' : '' }}" href="{{ route('admin.cambios.index') }}">
                         <i class="bi bi-exclamation-triangle me-1"></i>Reclamos
                     </a>
                 </li>

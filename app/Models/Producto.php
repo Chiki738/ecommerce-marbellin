@@ -23,7 +23,7 @@ class Producto extends Model
 
     public function variantes(): HasMany
     {
-        return $this->hasMany(VarianteProducto::class, 'producto_codigo');
+        return $this->hasMany(VarianteProducto::class, 'producto_codigo', 'codigo');
     }
 
     public function categoria(): BelongsTo
@@ -33,8 +33,6 @@ class Producto extends Model
 
     protected static function booted(): void
     {
-        static::deleting(function (self $producto) {
-            $producto->variantes()->delete();
-        });
+        static::deleting(fn(self $producto) => $producto->variantes()->delete());
     }
 }

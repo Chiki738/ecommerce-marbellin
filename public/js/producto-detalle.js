@@ -1,14 +1,15 @@
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("formAgregarCarrito");
+    if (!form) return;
 
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
         const formData = new FormData(form);
-        const token = form.querySelector('input[name="_token"]').value;
+        const token = document.querySelector('meta[name="csrf-token"]').content;
 
         try {
-            const response = await fetch(form.action, {
+            const res = await fetch(form.action, {
                 method: "POST",
                 headers: {
                     "X-CSRF-TOKEN": token,
@@ -18,17 +19,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: formData,
             });
 
-            const data = await response.json();
+            const data = await res.json();
+            const success = res.ok;
 
             Swal.fire({
-                icon: response.ok ? "success" : "error",
-                title: response.ok ? "¡Éxito!" : "¡Error!",
+                icon: success ? "success" : "error",
+                title: success ? "¡Éxito!" : "¡Error!",
                 text: data.message || data.error || "Algo salió mal",
                 timer: 2500,
                 showConfirmButton: false,
             });
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            console.error(err);
             Swal.fire({
                 icon: "error",
                 title: "¡Error!",

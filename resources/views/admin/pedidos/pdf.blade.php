@@ -8,6 +8,11 @@
         body {
             font-family: Arial, sans-serif;
             font-size: 12px;
+            margin: 20px;
+        }
+
+        h2 {
+            margin: 10px 0 5px;
         }
 
         table {
@@ -23,13 +28,14 @@
             text-align: left;
         }
 
-        h2 {
-            margin-top: 0;
+        th {
+            background-color: #f5f5f5;
         }
     </style>
 </head>
 
 <body>
+
     <h2>Información del Cliente</h2>
     <p><strong>Nombre:</strong> {{ $pedido->cliente->nombre }}</p>
     <p><strong>Email:</strong> {{ $pedido->cliente->email }}</p>
@@ -71,6 +77,7 @@
             </tr>
         </tfoot>
     </table>
+
 </body>
 
 </html>

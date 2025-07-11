@@ -13,9 +13,21 @@ class UserAdmin extends Authenticatable implements MustVerifyEmail
 
     protected $table = 'users_admin';
 
-    protected $fillable = ['email', 'password', 'rol'];
+    protected $fillable = [
+        'email',
+        'password',
+        'rol',
+        'two_factor_code',           // ✅ Añadido
+        'two_factor_expires_at',     // ✅ Añadido
+    ];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
-    protected $casts = ['password' => 'hashed'];
+    protected $casts = [
+        'password' => 'hashed',
+        'two_factor_expires_at' => 'datetime', // ✅ para comparación automática
+    ];
 }

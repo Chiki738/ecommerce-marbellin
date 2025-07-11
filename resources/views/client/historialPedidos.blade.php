@@ -1,5 +1,4 @@
-{{-- archivo: resources/views/client/historialPedidos.blade.php --}}
-
+{{-- resources/views/client/historialPedidos.blade.php --}}
 @extends('layouts.app')
 
 @section('content')
@@ -25,21 +24,25 @@
             <tbody>
                 @foreach ($pedidos as $pedido)
                 @php
-                $puedeSolicitar = $pedido->estado->nombre === 'entregado' && $pedido->fecha->diffInDays(now()) <= 2;
+                $estadoNombre = $pedido->estado->nombre;
+                $puedeSolicitar = $estadoNombre === 'entregado' && $pedido->fecha->diffInDays(now()) <= 2;
                     $agrupados=$pedido->detalles->groupBy('producto.nombre');
+
+                    $badgeClass = match($estadoNombre) {
+                    'entregado' => 'success',
+                    'enviado' => 'warning',
+                    'procesando' => 'info',
+                    'cancelado' => 'danger',
+                    default => 'secondary'
+                    };
                     @endphp
+
                     <tr>
                         <td><strong>PED-{{ $pedido->id }}</strong></td>
                         <td>{{ $pedido->fecha->format('d/m/Y') }}</td>
                         <td>
-                            <span class="badge bg-{{ match($pedido->estado->nombre) {
-                            'entregado' => 'success',
-                            'enviado' => 'warning',
-                            'procesando' => 'info',
-                            'cancelado' => 'danger',
-                            default => 'secondary'
-                        } }}">
-                                {{ ucfirst($pedido->estado->nombre) }}
+                            <span class="badge bg-{{ $badgeClass }}">
+                                {{ ucfirst($estadoNombre) }}
                             </span>
                         </td>
                         <td>
@@ -85,29 +88,35 @@
 
 @push('scripts')
 <script>
+    const detalleSelect = document.getElementById('detalleSelect');
+    const varianteInput = document.getElementById('varianteInput');
+    const pedidoInput = document.getElementById('pedidoInput');
+
     document.querySelectorAll('.btn-change').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const pedidoId = this.dataset.id;
-            const detalles = JSON.parse(this.dataset.detalles);
-            const select = document.getElementById('detalleSelect');
-            select.innerHTML = '<option value="">Selecciona una variante</option>';
+        btn.addEventListener('click', () => {
+            const detalles = JSON.parse(btn.dataset.detalles || '[]');
+            pedidoInput.value = btn.dataset.id;
 
-            detalles.forEach(d => {
-                const text = `${d.producto.nombre} - Color: ${d.variante.color}, Talla: ${d.variante.talla} (Cant: ${d.cantidad})`;
-                const option = document.createElement('option');
-                option.value = d.id;
-                option.textContent = text;
-                option.setAttribute('data-variante-id', d.variante_id);
-                select.appendChild(option);
+            detalleSelect.innerHTML = '<option value="">Selecciona una variante</option>';
+            detalles.forEach(({
+                id,
+                producto,
+                variante,
+                cantidad
+            }) => {
+                const option = new Option(
+                    `${producto.nombre} - Color: ${variante.color}, Talla: ${variante.talla} (Cant: ${cantidad})`,
+                    id
+                );
+                option.dataset.varianteId = variante.id;
+                detalleSelect.appendChild(option);
             });
-
-            document.getElementById('pedidoInput').value = pedidoId;
         });
+    });
 
-        document.getElementById('detalleSelect').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            document.getElementById('varianteInput').value = selectedOption.getAttribute('data-variante-id') || '';
-        });
+    detalleSelect.addEventListener('change', function() {
+        const selected = this.selectedOptions[0];
+        varianteInput.value = selected?.dataset.varianteId || '';
     });
 </script>
 @endpush

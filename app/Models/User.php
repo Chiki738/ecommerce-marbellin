@@ -21,6 +21,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'distrito_id',
         'direccion',
         'rol',
+        'two_factor_code',           // ✅ Añadido
+        'two_factor_expires_at',     // ✅ Añadido
     ];
 
     protected $hidden = [
@@ -30,13 +32,13 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected $casts = [
         'password' => 'hashed',
+        'two_factor_expires_at' => 'datetime', // ✅ para comparación automática con now()
     ];
 
     public function distrito()
     {
         return $this->belongsTo(Distrito::class, 'distrito_id', 'distrito_id');
     }
-
 
     public function provincia()
     {

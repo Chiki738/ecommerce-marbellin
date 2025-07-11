@@ -3,7 +3,6 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -13,12 +12,16 @@ class NotificarCambioProductoEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public $cambio;
+    public $mensaje;
+
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct($cambio, $mensaje)
     {
-        //
+        $this->cambio = $cambio;
+        $this->mensaje = $mensaje;
     }
 
     /**
@@ -27,7 +30,7 @@ class NotificarCambioProductoEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Notificar Cambio Producto Email',
+            subject: 'Notificación sobre tu cambio de producto'
         );
     }
 
@@ -37,7 +40,11 @@ class NotificarCambioProductoEmail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'view.name',
+            view: 'emails.notificar-cambio',
+            with: [
+                'cambio' => $this->cambio,
+                'mensaje' => $this->mensaje
+            ]
         );
     }
 
