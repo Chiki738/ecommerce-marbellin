@@ -126,15 +126,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Eliminar producto
     document.querySelectorAll(".form-eliminar").forEach((form) => {
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const url = form.action;
             const formData = new FormData(form);
+            const productoCard = form.closest(".card"); // Tarjeta del producto
+            const resumenItem = form
+                .closest(".card")
+                ?.querySelector(".resumen-item");
 
             try {
-                const res = await fetch(url, {
+                const res = await fetch(form.action, {
                     method: "POST",
                     headers: {
                         "X-Requested-With": "XMLHttpRequest",
@@ -143,19 +145,46 @@ document.addEventListener("DOMContentLoaded", () => {
                     body: formData,
                 });
 
-                await res.json(); // Puedes ignorar el contenido, solo mostrar alerta
+                const data = await res.json();
+
                 Swal.fire(
                     "Eliminado",
                     "Producto eliminado del carrito",
                     "success"
-                ).then(() => location.reload());
+                );
+
+                // Eliminar el bloque del detalle
+                const bloque = form.closest(".border");
+                if (bloque) bloque.remove();
+
+                // Si no quedan detalles dentro de la tarjeta, eliminarla
+                const detallesRestantes =
+                    productoCard.querySelectorAll(".border");
+                if (detallesRestantes.length === 0) {
+                    productoCard.remove();
+                }
+
+                // Actualizar total
+                document.getElementById("total-pedido").textContent =
+                    parseFloat(data.total).toFixed(2);
+
+                // Si el total es 0, mostrar mensaje de carrito vacío
+                if (parseFloat(data.total) === 0) {
+                    document.querySelector(".col-lg-8").innerHTML = `
+                    <div class="alert alert-info">Tu carrito está vacío. ¡Agrega productos para comenzar tu compra!</div>
+                `;
+                    const resumen = document.querySelector(
+                        ".col-lg-4 .card-body"
+                    );
+                    if (resumen) resumen.innerHTML = "";
+                }
             } catch (error) {
-                Swal.fire("Error", "No se pudo eliminar", "error");
+                Swal.fire("Error", "No se pudo eliminar el producto", "error");
             }
         });
     });
 
-    // Vaciar carrito
+    // Vaciar carrito sin recargar
     const formVaciar = document.querySelector(".form-vaciar");
     if (formVaciar) {
         formVaciar.addEventListener("submit", async (e) => {
@@ -164,7 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             Swal.fire({
                 icon: "warning",
-                title: "¿Estás seguro?",
+                title: "¿Vaciar carrito?",
                 text: "Se eliminarán todos los productos del carrito.",
                 showCancelButton: true,
                 confirmButtonText: "Sí, vaciar",
@@ -181,12 +210,24 @@ document.addEventListener("DOMContentLoaded", () => {
                             body: formData,
                         });
 
-                        await res.json();
+                        const data = await res.json();
+
                         Swal.fire(
                             "Carrito vacío",
                             "Todos los productos fueron eliminados",
                             "success"
-                        ).then(() => location.reload());
+                        );
+
+                        // Limpiar contenido del carrito
+                        document.querySelector(".col-lg-8").innerHTML = `
+                        <div class="alert alert-info">Tu carrito está vacío. ¡Agrega productos para comenzar tu compra!</div>
+                    `;
+
+                        // Limpiar resumen
+                        const resumen = document.querySelector(
+                            ".col-lg-4 .card-body"
+                        );
+                        if (resumen) resumen.innerHTML = "";
                     } catch (error) {
                         Swal.fire(
                             "Error",
