@@ -13,7 +13,7 @@ $navItems[] = ['name' => 'Historial', 'url' => route('client.historial'), 'icon'
 <nav class="navbar navbar-expand-lg bg-light position-relative" data-bs-theme="light">
     <div class="container-fluid">
         <a class="navbar-brand" href="{{ url('/') }}">
-            <img src="{{ asset('img/logo.png') }}" alt="Logo" class="navbar-logo">
+            <img src="{{ secure_asset('img/logo.png') }}">
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar">
@@ -89,5 +89,5 @@ $navItems[] = ['name' => 'Historial', 'url' => route('client.historial'), 'icon'
     </div>
 </nav>
 
-<link rel="stylesheet" href="{{ asset('css/nav.css') }}">
-<script src="{{ asset('js/buscadorNav.js') }}"></script>
+<script src="{{ secure_asset('js/buscadorNav.js') }}"></script>
+<link rel="stylesheet" href="{{ secure_asset('css/nav.css') }}">

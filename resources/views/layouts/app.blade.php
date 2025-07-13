@@ -14,7 +14,7 @@
     <script src="https://kit.fontawesome.com/e424d20747.js" crossorigin="anonymous"></script>
 
     {{-- Estilo base del sitio --}}
-    <link rel="stylesheet" href="{{ asset('css/home.css') }}">
+    <link rel="stylesheet" href="{{ secure_asset('css/home.css') }}">
 
     {{-- Estilos adicionales (por página) --}}
     @stack('styles')

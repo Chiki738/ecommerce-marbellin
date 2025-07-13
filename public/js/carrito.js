@@ -78,6 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .render("#paypal-button-container");
     }
 
+    // Actualizar cantidad
     document.querySelectorAll(".form-actualizar").forEach((form) => {
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -124,4 +125,77 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     });
+
+    // Eliminar producto
+    document.querySelectorAll(".form-eliminar").forEach((form) => {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const url = form.action;
+            const formData = new FormData(form);
+
+            try {
+                const res = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                        "X-CSRF-TOKEN": formData.get("_token"),
+                    },
+                    body: formData,
+                });
+
+                await res.json(); // Puedes ignorar el contenido, solo mostrar alerta
+                Swal.fire(
+                    "Eliminado",
+                    "Producto eliminado del carrito",
+                    "success"
+                ).then(() => location.reload());
+            } catch (error) {
+                Swal.fire("Error", "No se pudo eliminar", "error");
+            }
+        });
+    });
+
+    // Vaciar carrito
+    const formVaciar = document.querySelector(".form-vaciar");
+    if (formVaciar) {
+        formVaciar.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const formData = new FormData(formVaciar);
+
+            Swal.fire({
+                icon: "warning",
+                title: "¿Estás seguro?",
+                text: "Se eliminarán todos los productos del carrito.",
+                showCancelButton: true,
+                confirmButtonText: "Sí, vaciar",
+                cancelButtonText: "Cancelar",
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const res = await fetch(formVaciar.action, {
+                            method: "POST",
+                            headers: {
+                                "X-Requested-With": "XMLHttpRequest",
+                                "X-CSRF-TOKEN": formData.get("_token"),
+                            },
+                            body: formData,
+                        });
+
+                        await res.json();
+                        Swal.fire(
+                            "Carrito vacío",
+                            "Todos los productos fueron eliminados",
+                            "success"
+                        ).then(() => location.reload());
+                    } catch (error) {
+                        Swal.fire(
+                            "Error",
+                            "No se pudo vaciar el carrito",
+                            "error"
+                        );
+                    }
+                }
+            });
+        });
+    }
 });
