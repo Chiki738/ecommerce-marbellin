@@ -8,13 +8,13 @@
     <title>Marbellin</title>
 
     {{-- Favicon e iconos --}}
-    <link rel="icon" href="{{ secure_asset('favicon.ico') }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <script src="https://kit.fontawesome.com/e424d20747.js" crossorigin="anonymous"></script>
 
     {{-- Estilo base del sitio --}}
-    <link rel="stylesheet" href="{{ secure_asset('css/home.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/home.css') }}">
 
     {{-- Estilos adicionales (por página) --}}
     @stack('styles')
