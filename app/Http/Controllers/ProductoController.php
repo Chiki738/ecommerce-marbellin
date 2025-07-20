@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\{Producto, VarianteProducto, Categoria};
 use Cloudinary\Cloudinary;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ProductoController extends Controller
 {
+    /** Vista admin de productos */
     public function index()
     {
         return view('admin.productosAdmin', [
@@ -17,6 +19,7 @@ class ProductoController extends Controller
         ]);
     }
 
+    /** Guardar nuevo producto */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -30,18 +33,19 @@ class ProductoController extends Controller
 
         $data['imagen'] = $this->subirImagenCloudinary($request);
         $producto = Producto::create($data);
-
         $this->generarVariantes($producto->codigo);
 
         return redirect()->route('admin.productosAdmin')->with('success', 'Producto y variantes generadas automáticamente');
     }
 
+    /** Eliminar producto por código */
     public function destroy($codigo)
     {
         Producto::where('codigo', $codigo)->firstOrFail()->delete();
         return back()->with('success', 'Producto eliminado correctamente.');
     }
 
+    /** Actualizar producto */
     public function update(Request $request, $codigo)
     {
         $producto = Producto::where('codigo', $codigo)->firstOrFail();
@@ -59,22 +63,20 @@ class ProductoController extends Controller
         }
 
         $producto->update($data);
-
         return response()->json(['message' => 'Producto actualizado correctamente']);
     }
 
+    /** Mostrar productos al público */
     public function mostrarProductosPublico(Request $request)
     {
         $productos = Producto::with('categoria')
-            ->when($request->buscar, function ($query, $buscar) {
-                $terminos = explode(' ', $buscar);
-                $query->where(function ($q) use ($terminos) {
-                    foreach ($terminos as $palabra) {
-                        $q->orWhere('nombre', 'LIKE', "%$palabra%")
-                            ->orWhere('descripcion', 'LIKE', "%$palabra%");
-                    }
-                });
-            })->paginate(6);
+            ->when($request->buscar, fn($q) => $q->where(function ($q2) use ($request) {
+                foreach (explode(' ', $request->buscar) as $palabra) {
+                    $q2->orWhere('nombre', 'LIKE', "%$palabra%")
+                        ->orWhere('descripcion', 'LIKE', "%$palabra%");
+                }
+            }))
+            ->paginate(6);
 
         return view('producto.productos', [
             'productos' => $productos,
@@ -84,6 +86,7 @@ class ProductoController extends Controller
         ]);
     }
 
+    /** Filtros por talla, color y categoría */
     public function filtrar(Request $request)
     {
         $filtros = $request->only(['colores', 'tallas', 'categorias']);
@@ -107,6 +110,7 @@ class ProductoController extends Controller
         ]);
     }
 
+    /** Detalle de un producto */
     public function detalleProducto($codigo)
     {
         $producto = Producto::with(['variantes', 'categoria'])->where('codigo', $codigo)->firstOrFail();
@@ -117,6 +121,7 @@ class ProductoController extends Controller
         ]);
     }
 
+    /** Autocompletado inteligente */
     public function autocomplete(Request $request)
     {
         $query = $this->normalizar($request->input('query'));
@@ -124,12 +129,14 @@ class ProductoController extends Controller
 
         $productos = Producto::all()->map(function ($producto) use ($query, $terminos) {
             $nombre = $this->normalizar($producto->nombre);
+
             $puntaje = match (true) {
                 $nombre === $query => 3,
                 str_contains($nombre, $query) => 2,
                 collect($terminos)->every(fn($t) => str_contains($nombre, $t)) => 1,
                 default => 0,
             };
+
             return compact('producto', 'puntaje');
         });
 
@@ -144,10 +151,13 @@ class ProductoController extends Controller
         );
     }
 
+    // =========================
     // Funciones auxiliares
+    // =========================
+
     private function normalizar($cadena)
     {
-        return strtolower(preg_replace('~[^\pL\d]+~u', ' ', iconv('UTF-8', 'ASCII//TRANSLIT', $cadena)));
+        return strtolower(Str::of(iconv('UTF-8', 'ASCII//TRANSLIT', $cadena))->replaceMatches('/[^\pL\d]+/u', ' '));
     }
 
     private function subirImagenCloudinary(Request $request): string
@@ -155,7 +165,7 @@ class ProductoController extends Controller
         $cloudinary = new Cloudinary([
             'cloud' => [
                 'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
-                'api_key'    => env('CLOUDINARY_API_KEY'),
+                'api_key' => env('CLOUDINARY_API_KEY'),
                 'api_secret' => env('CLOUDINARY_API_SECRET'),
             ],
             'url' => ['secure' => true]
@@ -174,8 +184,11 @@ class ProductoController extends Controller
 
     private function generarVariantes(string $codigo): void
     {
-        foreach (['S', 'M', 'L', 'XL'] as $talla) {
-            foreach (['Negro', 'Blanco', 'Rojo', 'Amarillo'] as $color) {
+        $tallas = ['S', 'M', 'L', 'XL'];
+        $colores = ['Negro', 'Blanco', 'Rojo', 'Amarillo'];
+
+        foreach ($tallas as $talla) {
+            foreach ($colores as $color) {
                 VarianteProducto::create([
                     'producto_codigo' => $codigo,
                     'talla' => $talla,

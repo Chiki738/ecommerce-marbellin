@@ -10,7 +10,7 @@ $productosAgrupados = $pedido->detalles->groupBy(fn($d) => $d->producto->nombre)
 <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
     <thead>
         <tr>
-            @foreach (['Color', 'Talla', 'SKU', 'Cantidad', 'Subtotal'] as $col)
+            @foreach (['Color', 'Talla', 'Cantidad', 'Subtotal'] as $col)
             <th style="border: 1px solid #ccc; padding: 6px;">{{ $col }}</th>
             @endforeach
         </tr>
@@ -20,7 +20,6 @@ $productosAgrupados = $pedido->detalles->groupBy(fn($d) => $d->producto->nombre)
         <tr>
             <td style="border: 1px solid #ccc; padding: 6px;">{{ $detalle->variante->color }}</td>
             <td style="border: 1px solid #ccc; padding: 6px;">{{ $detalle->variante->talla }}</td>
-            <td style="border: 1px solid #ccc; padding: 6px;">{{ $detalle->variante->sku }}</td>
             <td style="border: 1px solid #ccc; padding: 6px;">{{ $detalle->cantidad }}</td>
             <td style="border: 1px solid #ccc; padding: 6px;">S/ {{ number_format($detalle->subtotal, 2) }}</td>
         </tr>

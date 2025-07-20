@@ -110,7 +110,7 @@ $alertasBajo = $stockBajo->reject(fn($v) => $stockCritico->contains('producto_co
                         @php
                         $class = $variante->cantidad <= 5 ? 'table-danger' : ($variante->cantidad <= 13 ? 'table-warning' : 'table-success' );
                                 @endphp
-                                <tr class="{{ $class }}">
+                                <tr class="{{ $class }}" data-cantidad="{{ $variante->cantidad }}" data-producto="{{ $producto->codigo }}" data-nombre="{{ $producto->nombre }}">
                                 <td>{{ $variante->id }}</td>
                                 <td>{{ $variante->talla }}</td>
                                 <td>{{ $variante->color }}</td>
@@ -141,4 +141,28 @@ $alertasBajo = $stockBajo->reject(fn($v) => $stockCritico->contains('producto_co
 
 @push('scripts')
 <script src="{{ asset('js/admin/adminProductos.js') }}"></script>
+@endpush
+
+@push('scripts')
+<script src="{{ asset('js/admin/adminProductos.js') }}"></script>
+<script>
+    const inputBusqueda = document.getElementById("buscarProducto");
+
+    if (inputBusqueda) {
+        inputBusqueda.addEventListener("input", (e) => {
+            const texto = e.target.value.toLowerCase();
+            const productos = document.querySelectorAll(".producto-item");
+
+            productos.forEach((producto) => {
+                const codigo = producto.dataset.codigo;
+                const nombre = producto.dataset.nombre;
+
+                const coincide =
+                    codigo.includes(texto) || nombre.includes(texto);
+
+                producto.style.display = coincide ? "" : "none";
+            });
+        });
+    }
+</script>
 @endpush

@@ -191,8 +191,17 @@ class PedidoController extends Controller
             $query->where('estado_id', $estado);
         }
 
+        if ($fecha === 'hoy') {
+            $query->whereDate('fecha', now()->toDateString());
+        }
+
         if ($fecha === 'semana') {
             $query->whereBetween('fecha', [now()->startOfWeek(), now()->endOfWeek()]);
+        }
+
+        if ($fecha === 'mes') {
+            $query->whereMonth('fecha', now()->month)
+                ->whereYear('fecha', now()->year);
         }
 
         $pedidos = $query->paginate($perPage);

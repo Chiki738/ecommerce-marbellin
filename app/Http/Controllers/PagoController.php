@@ -48,11 +48,14 @@ class PagoController extends Controller
         $errores = [];
 
         foreach ($pedido->detalles as $detalle) {
-            $variante = $detalle->variante;
-
-            if (!$variante) continue;
-
             $producto = $detalle->producto->nombre;
+
+            if (!$detalle->variante) {
+                $errores[] = "Producto '$producto' no tiene variante asociada.";
+                continue;
+            }
+
+            $variante = $detalle->variante;
             $talla = $variante->talla;
             $color = $variante->color;
 
@@ -62,6 +65,7 @@ class PagoController extends Controller
                 $errores[] = "Producto '$producto' con talla '$talla' y color '$color' tiene stock insuficiente.";
             }
         }
+
 
         return empty($errores)
             ? response()->json(['success' => true])

@@ -70,7 +70,6 @@
                     </td>
                     <td class="estado-solicitud">
                         @switch($solicitud->estado)
-
                         @case('Pendiente')
                         <span class="badge bg-warning text-dark">
                             <i class="fas fa-clock me-1"></i>Pendiente
@@ -113,12 +112,14 @@
         </table>
     </div>
 
+    @if ($cambios->total() > 0)
     <div class="d-flex flex-column align-items-center mt-3">
         <p class="text-muted mb-1">
             Mostrando {{ $cambios->firstItem() }} al {{ $cambios->lastItem() }} de {{ $cambios->total() }} resultados
         </p>
-        {{ $cambios->withQueryString()->links() }}
+        {{ $cambios->withQueryString()->links('vendor.pagination.bootstrap-5') }}
     </div>
+    @endif
 </div>
 
 @include('modals.admin.modalDevolucionesAdmin')

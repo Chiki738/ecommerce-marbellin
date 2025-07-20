@@ -53,16 +53,17 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".form-actualizar-cantidad").forEach((form) => {
         const input = form.querySelector(".cantidad-input");
         const btn = form.querySelector(".actualizar-btn");
-        const original = input.value;
+        const original = parseInt(input.value);
 
         input.addEventListener("input", () => {
-            btn.disabled = input.value === original;
+            const actual = parseInt(input.value);
+            btn.disabled = actual === original || isNaN(actual);
         });
 
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
             const id = form.dataset.id;
-            const cantidad = input.value;
+            const cantidad = parseInt(input.value);
 
             try {
                 const res = await fetch(`/admin/variantes/${id}/actualizar`, {
@@ -83,6 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const fila = form.closest("tr");
                 fila.dataset.cantidad = cantidad;
+
                 fila.className =
                     cantidad <= 5
                         ? "table-danger"
@@ -90,6 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         ? "table-warning"
                         : "table-success";
 
+                input.defaultValue = cantidad;
                 btn.disabled = true;
                 actualizarResumenStock();
             } catch (err) {
@@ -112,14 +115,16 @@ document.addEventListener("DOMContentLoaded", () => {
             else if (cantidad <= 13) stockBajo.add(codigo);
         });
 
-        document.querySelector(".stock-critico-count").textContent =
-            stockCritico.size;
-        document.querySelector(".stock-bajo-count").textContent =
-            stockBajo.size;
+        const criticoEl = document.querySelector(".stock-critico-count");
+        const bajoEl = document.querySelector(".stock-bajo-count");
+
+        if (criticoEl) criticoEl.textContent = stockCritico.size;
+        if (bajoEl) bajoEl.textContent = stockBajo.size;
 
         const alerta = document.querySelector(".alert-warning");
         const lista = document.querySelector(".stock-alert-list");
-        if (!lista || !alerta) return;
+
+        if (!alerta || !lista) return;
 
         lista.innerHTML = "";
 

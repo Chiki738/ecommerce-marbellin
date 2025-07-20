@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 onApprove: async (data, actions) => {
                     const resStock = await fetch(
-                        `/carrito/verificar-stock/${pedidoId}`,
+                        `/verificar-stock/${pedidoId}`,
                         {
                             method: "GET",
                             headers: { "X-Requested-With": "XMLHttpRequest" },
@@ -28,9 +28,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     const stockData = await resStock.json();
 
                     if (!stockData.success) {
+                        const errores = stockData.errores?.length
+                            ? stockData.errores
+                                  .map((e) => `<li>${e}</li>`)
+                                  .join("")
+                            : "<li>Ocurrió un error al verificar el stock.</li>";
+
                         Swal.fire({
                             icon: "error",
-                            html: stockData.errores.join("<br>"),
+                            title: "Stock insuficiente",
+                            html: `<ul class="text-start">${errores}</ul>`,
                             confirmButtonText: "Aceptar",
                         });
                         return;
