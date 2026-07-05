@@ -30,9 +30,7 @@
         <a href="{{ route('admin.cambios.index', ['estado' => $estadoBtn]) }}"
             class="btn {{ $colores[$estadoBtn] }} {{ (request('estado') ?? 'Todas') === $estadoBtn ? 'active shadow' : '' }}">
             {{ $estadoBtn }}
-            ({{ $estadoBtn === 'Todas' 
-                ? \App\Models\CambioProducto::count() 
-                : \App\Models\CambioProducto::where('estado', $estadoBtn)->count() }})
+            ({{ $conteos->get($estadoBtn, 0) }})
         </a>
         @endforeach
     </div>

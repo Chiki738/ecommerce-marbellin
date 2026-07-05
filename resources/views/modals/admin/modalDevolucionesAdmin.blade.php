@@ -158,13 +158,3 @@
         </div>
     </div>
 </div>
-
-<script>
-    document.getElementById('accionProcesar').addEventListener('change', function() {
-        const accion = this.value;
-
-        document.getElementById('seccionNuevoProducto').style.display = (accion === 'cambiar') ? 'block' : 'none';
-        document.getElementById('seccionVariantes').style.display = (accion === 'cambiar') ? 'block' : 'none';
-        document.getElementById('comentarioAdminSeccion').style.display = (accion === 'rechazar' || accion === 'cambiar') ? 'block' : 'none';
-    });
-</script>

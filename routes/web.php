@@ -61,8 +61,12 @@ Route::prefix('acceso')->group(function () {
     })->middleware(['auth', 'signed'])->name('verification.verify');
 
     // 2FA
-    Route::view('/2fa', 'auth.2fa')->name('2fa.verify');
-    Route::post('/2fa', [AuthController::class, 'verify2FA'])->name('2fa.verify.post');
+    Route::get('/2fa', fn() => session('2fa_guard')
+        ? view('auth.2fa')
+        : redirect()->route('login'))->name('2fa.verify');
+    Route::post('/2fa', [AuthController::class, 'verify2FA'])
+        ->middleware('throttle:5,1')
+        ->name('2fa.verify.post');
 });
 
 /*
@@ -82,7 +86,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/verificar-stock/{pedido}', [PagoController::class, 'verificarStock']);
     Route::get('/historial', [PedidoController::class, 'historial'])->name('client.historial');
-    Route::get('/pago/exito', [PagoController::class, 'exito'])->name('pago.exito');
+    Route::post('/pago/exito', [PagoController::class, 'exito'])->name('pago.exito');
     Route::post('/cambio-producto/solicitar', [CambioProductoController::class, 'solicitar'])->name('cambio.solicitar');
 });
 

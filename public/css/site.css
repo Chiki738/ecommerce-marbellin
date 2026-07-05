@@ -1,0 +1,104 @@
+:root {
+    --brand-ink: #221f24;
+    --brand-rose: #b94f6b;
+    --brand-rose-dark: #8f304c;
+    --brand-teal: #0f766e;
+    --brand-soft: #fff7f9;
+    --brand-line: #eadde2;
+}
+
+body {
+    background: #fffafa;
+    color: var(--brand-ink);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+main {
+    min-height: 68vh;
+}
+
+a {
+    color: var(--brand-rose-dark);
+}
+
+.btn {
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.btn-primary,
+.btn-success {
+    background: var(--brand-rose);
+    border-color: var(--brand-rose);
+}
+
+.btn-primary:hover,
+.btn-success:hover {
+    background: var(--brand-rose-dark);
+    border-color: var(--brand-rose-dark);
+}
+
+.btn-outline-primary {
+    color: var(--brand-rose-dark);
+    border-color: var(--brand-rose);
+}
+
+.btn-outline-primary:hover {
+    background: var(--brand-rose);
+    border-color: var(--brand-rose);
+}
+
+.text-primary {
+    color: var(--brand-rose-dark) !important;
+}
+
+.bg-primary {
+    background-color: var(--brand-rose) !important;
+}
+
+.card,
+.modal-content,
+.accordion-item,
+.alert {
+    border-radius: 8px;
+}
+
+.card,
+.accordion-item {
+    border-color: var(--brand-line);
+}
+
+.catalog-heading {
+    background: linear-gradient(90deg, var(--brand-soft), #ffffff);
+    border: 1px solid var(--brand-line);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+}
+
+.product-card {
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(34, 31, 36, 0.1);
+}
+
+.product-card-image {
+    aspect-ratio: 4 / 5;
+    background: var(--brand-soft);
+}
+
+.product-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.filter-panel .card-header {
+    background: var(--brand-ink) !important;
+}
+
+.footer-brand-note {
+    color: #6c5961;
+}

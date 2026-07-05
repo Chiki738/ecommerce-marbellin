@@ -2,11 +2,13 @@
     width: 100%;
     aspect-ratio: 1 / 1;
     overflow: hidden;
-    border: 2px solid #ccc;
+    border: 1px solid var(--brand-line, #eadde2);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: var(--brand-soft, #fff7f9);
+    box-shadow: 0 12px 30px rgba(34, 31, 36, 0.08);
 }
 
 .imagen-wrapper img {
@@ -19,6 +21,7 @@
 .colores-container {
     display: flex;
     gap: 10px;
+    flex-wrap: wrap;
 }
 
 .color-label {
@@ -26,7 +29,7 @@
     height: 30px;
     border-radius: 50%;
     display: inline-block;
-    border: 2px solid #ccc;
+    border: 2px solid #d8c6cd;
     cursor: pointer;
     transition: transform 0.2s, border 0.2s;
 }
@@ -65,6 +68,6 @@ input[type="radio"][name="color"] {
 }
 
 input[type="radio"][name="color"]:checked+.color-label {
-    border: 3px solid #0d6efd;
-    box-shadow: 0 0 5px #0d6efd;
+    border: 3px solid var(--brand-rose, #b94f6b);
+    box-shadow: 0 0 0 4px rgba(185, 79, 107, 0.16);
 }

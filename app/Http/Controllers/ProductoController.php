@@ -6,6 +6,7 @@ use App\Models\{Producto, VarianteProducto, Categoria};
 use Cloudinary\Cloudinary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 class ProductoController extends Controller
 {
@@ -23,12 +24,12 @@ class ProductoController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'codigo' => 'required|string|unique:productos,codigo',
-            'nombre' => 'required|string|max:255',
-            'precio' => 'required|numeric',
-            'descripcion' => 'required|string',
-            'imagen' => 'required|image|max:10240',
-            'categoria_id' => 'required|exists:categorias,categoria_id',
+            'codigo' => ['required', 'string', 'max:50', 'alpha_dash', 'unique:productos,codigo'],
+            'nombre' => ['required', 'string', 'max:255'],
+            'precio' => ['required', 'numeric', 'min:0.01'],
+            'descripcion' => ['required', 'string', 'max:2000'],
+            'imagen' => ['required', 'image', 'max:5120'],
+            'categoria_id' => ['required', 'exists:categorias,categoria_id'],
         ]);
 
         $data['imagen'] = $this->subirImagenCloudinary($request);
@@ -51,11 +52,11 @@ class ProductoController extends Controller
         $producto = Producto::where('codigo', $codigo)->firstOrFail();
 
         $data = $request->validate([
-            'nombre' => 'required|string|max:255',
-            'precio' => 'required|numeric',
-            'descripcion' => 'required|string',
-            'categoria_id' => 'required|exists:categorias,categoria_id',
-            'imagen' => 'nullable|image|max:10240',
+            'nombre' => ['required', 'string', 'max:255'],
+            'precio' => ['required', 'numeric', 'min:0.01'],
+            'descripcion' => ['required', 'string', 'max:2000'],
+            'categoria_id' => ['required', 'exists:categorias,categoria_id'],
+            'imagen' => ['nullable', 'image', 'max:5120'],
         ]);
 
         if ($request->hasFile('imagen')) {
@@ -69,13 +70,20 @@ class ProductoController extends Controller
     /** Mostrar productos al público */
     public function mostrarProductosPublico(Request $request)
     {
+        $data = $request->validate([
+            'buscar' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $buscar = trim($data['buscar'] ?? '');
+
         $productos = Producto::with('categoria')
-            ->when($request->buscar, fn($q) => $q->where(function ($q2) use ($request) {
-                foreach (explode(' ', $request->buscar) as $palabra) {
+            ->when($buscar !== '', fn($q) => $q->where(function ($q2) use ($buscar) {
+                foreach (array_filter(explode(' ', $buscar)) as $palabra) {
                     $q2->orWhere('nombre', 'LIKE', "%$palabra%")
                         ->orWhere('descripcion', 'LIKE', "%$palabra%");
                 }
             }))
+            ->orderBy('nombre')
             ->paginate(6);
 
         return view('producto.productos', [
@@ -89,7 +97,20 @@ class ProductoController extends Controller
     /** Filtros por talla, color y categoría */
     public function filtrar(Request $request)
     {
-        $filtros = $request->only(['colores', 'tallas', 'categorias']);
+        $data = $request->validate([
+            'colores' => ['nullable', 'array'],
+            'colores.*' => ['string', 'max:40'],
+            'tallas' => ['nullable', 'array'],
+            'tallas.*' => ['string', 'max:10'],
+            'categorias' => ['nullable', 'array'],
+            'categorias.*' => ['integer', 'exists:categorias,categoria_id'],
+        ]);
+
+        $filtros = [
+            'colores' => $data['colores'] ?? [],
+            'tallas' => $data['tallas'] ?? [],
+            'categorias' => $data['categorias'] ?? [],
+        ];
 
         $productos = Producto::with(['variantes' => function ($q) use ($filtros) {
             $q->where('cantidad', '>', 0)
@@ -101,7 +122,8 @@ class ProductoController extends Controller
                     ->when($filtros['colores'] ?? [], fn($q) => $q->whereIn('color', $filtros['colores']))
                     ->when($filtros['tallas'] ?? [], fn($q) => $q->whereIn('talla', $filtros['tallas']));
             })
-            ->when($filtros['categorias'] ?? [], fn($q) => $q->whereIn('categoria_id', $filtros['categorias']))
+            ->when($filtros['categorias'], fn($q) => $q->whereIn('categoria_id', $filtros['categorias']))
+            ->orderBy('nombre')
             ->paginate(6);
 
         return view('producto.productos', [
@@ -124,10 +146,18 @@ class ProductoController extends Controller
     /** Autocompletado inteligente */
     public function autocomplete(Request $request)
     {
-        $query = $this->normalizar($request->input('query'));
+        $data = $request->validate([
+            'query' => ['required', 'string', 'min:2', 'max:60'],
+        ]);
+
+        $query = $this->normalizar($data['query']);
         $terminos = explode(' ', $query);
 
-        $productos = Producto::all()->map(function ($producto) use ($query, $terminos) {
+        $productos = Producto::select(['codigo', 'nombre', 'precio', 'imagen'])
+            ->orderBy('nombre')
+            ->limit(100)
+            ->get()
+            ->map(function ($producto) use ($query, $terminos) {
             $nombre = $this->normalizar($producto->nombre);
 
             $puntaje = match (true) {
@@ -155,18 +185,30 @@ class ProductoController extends Controller
     // Funciones auxiliares
     // =========================
 
-    private function normalizar($cadena)
+    private function normalizar(string $cadena): string
     {
-        return strtolower(Str::of(iconv('UTF-8', 'ASCII//TRANSLIT', $cadena))->replaceMatches('/[^\pL\d]+/u', ' '));
+        $texto = iconv('UTF-8', 'ASCII//TRANSLIT', $cadena) ?: $cadena;
+
+        return Str::of($texto)
+            ->lower()
+            ->replaceMatches('/[^\pL\d]+/u', ' ')
+            ->squish()
+            ->toString();
     }
 
     private function subirImagenCloudinary(Request $request): string
     {
+        $config = config('services.cloudinary');
+
+        if (blank($config['cloud_name']) || blank($config['api_key']) || blank($config['api_secret'])) {
+            throw new RuntimeException('Cloudinary no está configurado.');
+        }
+
         $cloudinary = new Cloudinary([
             'cloud' => [
-                'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
-                'api_key' => env('CLOUDINARY_API_KEY'),
-                'api_secret' => env('CLOUDINARY_API_SECRET'),
+                'cloud_name' => $config['cloud_name'],
+                'api_key' => $config['api_key'],
+                'api_secret' => $config['api_secret'],
             ],
             'url' => ['secure' => true]
         ]);

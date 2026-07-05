@@ -18,9 +18,9 @@ $filtros = [
 ];
 @endphp
 
-<div class="card shadow-sm mb-4">
+<div class="card filter-panel shadow-sm mb-4">
     <div class="card-header bg-primary text-white">
-        <h6 class="mb-0">Filtrar productos</h6>
+        <h2 class="h6 mb-0">Filtrar productos</h2>
     </div>
     <div class="card-body">
         <form method="GET" action="{{ route('productos.filtrar') }}">
@@ -46,6 +46,7 @@ $filtros = [
             @endforeach
 
             <button type="submit" class="btn btn-outline-primary w-100">Aplicar filtros</button>
+            <a href="{{ route('productos.vista') }}" class="btn btn-link w-100 mt-2 text-decoration-none">Limpiar filtros</a>
         </form>
     </div>
 </div>

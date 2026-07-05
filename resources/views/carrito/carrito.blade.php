@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+$paypalClientId = config('services.paypal.client_id');
+@endphp
+
 @if(session('success'))
 <div class="alert alert-success">{{ session('success') }}</div>
 @endif
@@ -101,6 +105,11 @@
                     <input type="hidden" id="pedidoId" value="{{ $pedido->id }}">
                     <div class="d-grid gap-2">
                         <div id="paypal-button-container" class="mt-3"></div>
+                        @unless($paypalClientId)
+                        <div class="alert alert-warning small mb-0">
+                            Pago en línea no configurado. Define PAYPAL_CLIENT_ID para activar PayPal.
+                        </div>
+                        @endunless
 
                         <form action="{{ route('carrito.vaciar') }}" class="form-vaciar" method="POST">
                             @csrf @method('DELETE')
@@ -118,6 +127,8 @@
 @endsection
 
 @push('scripts')
-<script src="https://www.paypal.com/sdk/js?client-id=ASdq36S1LmT-GX6If7Pbd7pRsdRtNaSuhsFkFe5BhHhn_nUlrr8KakgZZN057NBnbmM7QYmLJga6LH3R&currency=USD"></script>
+@if($paypalClientId)
+<script src="https://www.paypal.com/sdk/js?client-id={{ rawurlencode($paypalClientId) }}&currency=USD"></script>
+@endif
 <script src="{{ asset('js/carrito.js') }}"></script>
 @endpush

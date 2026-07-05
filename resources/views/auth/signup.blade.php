@@ -1,7 +1,7 @@
 @extends('auth.acceso')
 
 @section('formContent')
-<form id="formSign" class="needs-validation p-3 p-sm-4" novalidate>
+<form id="formSign" action="{{ route('signup.post') }}" method="POST" class="needs-validation p-3 p-sm-4" novalidate>
     @csrf
     <h3 class="text-center mb-3">Registrarse</h3>
 
@@ -10,7 +10,7 @@
     ['name' => 'nombre', 'label' => 'Primer nombre', 'type' => 'text', 'col' => 6],
     ['name' => 'apellido', 'label' => 'Primer apellido', 'type' => 'text', 'col' => 6],
     ['name' => 'email', 'label' => 'Correo electrónico', 'type' => 'email', 'col' => 12],
-    ['name' => 'password', 'label' => 'Contraseña', 'type' => 'password', 'col' => 6],
+    ['name' => 'password', 'label' => 'Contraseña (mínimo 8 caracteres)', 'type' => 'password', 'col' => 6],
     ['name' => 'password_confirmation', 'label' => 'Confirmar contraseña', 'type' => 'password', 'col' => 6],
     ['name' => 'direccion', 'label' => 'Dirección exacta', 'type' => 'text', 'col' => 12],
     ];

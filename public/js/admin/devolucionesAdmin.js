@@ -39,6 +39,10 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("seccionVariantes").style.display = mostrar
             ? "block"
             : "none";
+        document.getElementById("comentarioAdminSeccion").style.display =
+            accion.value === "rechazar" || accion.value === "cambiar"
+                ? "block"
+                : "none";
     });
 });
 
@@ -50,16 +54,23 @@ function procesarSolicitud() {
     const estadoSeleccionado = document.getElementById("accionProcesar").value;
     const comentarioAdmin = document.getElementById("comentarioAdmin").value;
 
-    let varianteNuevaId = null;
+    if (!["aprobar", "rechazar", "cambiar"].includes(estadoSeleccionado)) {
+        Swal.fire("Selecciona una acción", "Debes elegir cómo procesar la solicitud.", "warning");
+        return;
+    }
+
+    let productoCodigo = null;
+    let tallaNueva = null;
+    let colorNuevo = null;
 
     if (estadoSeleccionado === "cambiar") {
-        const productoId = document
+        productoCodigo = document
             .getElementById("nuevoProducto")
             .value.trim();
-        const talla = document.getElementById("nuevaTalla").value.trim();
-        const color = document.getElementById("nuevoColor").value.trim();
+        tallaNueva = document.getElementById("nuevaTalla").value.trim();
+        colorNuevo = document.getElementById("nuevoColor").value.trim();
 
-        if (!productoId || !talla || !color) {
+        if (!productoCodigo || !tallaNueva || !colorNuevo) {
             Swal.fire(
                 "Faltan datos",
                 "Debes seleccionar producto, talla y color para procesar el cambio.",
@@ -67,8 +78,6 @@ function procesarSolicitud() {
             );
             return;
         }
-
-        varianteNuevaId = `${productoId}-${talla}-${color}`;
     }
 
     fetch(`/admin/cambios/${id}/procesar`, {
@@ -86,7 +95,9 @@ function procesarSolicitud() {
                     ? "Aprobado"
                     : "Rechazado",
             comentario_admin: comentarioAdmin,
-            variante_nueva_id: varianteNuevaId,
+            producto_codigo: productoCodigo,
+            talla_nueva: tallaNueva,
+            color_nuevo: colorNuevo,
             notificar: true,
         }),
     })

@@ -35,4 +35,18 @@ return [
         ],
     ],
 
+    'cloudinary' => [
+        'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+        'api_key' => env('CLOUDINARY_API_KEY'),
+        'api_secret' => env('CLOUDINARY_API_SECRET'),
+    ],
+
+    'paypal' => [
+        'client_id' => env('PAYPAL_CLIENT_ID'),
+    ],
+
+    'dashboard' => [
+        'url' => env('DASHBOARD_URL', 'http://127.0.0.1:8050'),
+    ],
+
 ];

@@ -35,7 +35,7 @@ $alertasBajo = $stockBajo->reject(fn($v) => $stockCritico->contains('producto_co
     <i class="bi bi-exclamation-triangle-fill me-2"></i>
     <strong>¡Advertencia!</strong>
     Hay {{ $alertasCritico->count() }} productos en stock crítico y {{ $alertasBajo->count() }} en stock bajo.
-    <ul class="mb-0">
+    <ul class="mb-0 stock-alert-list">
         @foreach ($alertasCritico as $codigo => $g)
         <li>{{ $productos->firstWhere('codigo', $codigo)->nombre }} (stock crítico)</li>
         @endforeach
@@ -141,28 +141,4 @@ $alertasBajo = $stockBajo->reject(fn($v) => $stockCritico->contains('producto_co
 
 @push('scripts')
 <script src="{{ asset('js/admin/adminProductos.js') }}"></script>
-@endpush
-
-@push('scripts')
-<script src="{{ asset('js/admin/adminProductos.js') }}"></script>
-<script>
-    const inputBusqueda = document.getElementById("buscarProducto");
-
-    if (inputBusqueda) {
-        inputBusqueda.addEventListener("input", (e) => {
-            const texto = e.target.value.toLowerCase();
-            const productos = document.querySelectorAll(".producto-item");
-
-            productos.forEach((producto) => {
-                const codigo = producto.dataset.codigo;
-                const nombre = producto.dataset.nombre;
-
-                const coincide =
-                    codigo.includes(texto) || nombre.includes(texto);
-
-                producto.style.display = coincide ? "" : "none";
-            });
-        });
-    }
-</script>
 @endpush

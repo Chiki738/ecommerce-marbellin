@@ -5,15 +5,20 @@
 @endpush
 
 @section('content')
-<section class="home-banner d-flex justify-content-center align-items-center text-white text-center">
-    <div class="content-box px-3 px-sm-5 py-4 w-100">
-        <h1 class="titulo-responsivo">Bienvenida a Marbellin</h1>
-        <p class="mt-3 parrafo-responsivo">
-            Pasión, elegancia y confianza para la mujer moderna. <br>
-            Desde hace 6 años, resaltamos tu esencia con ropa interior que combina comodidad, estilo y sensualidad. <br><br>
-            <strong class="fs-6">¡Gracias por ser parte de esta historia llena de fuerza femenina! 💖</strong> <br>
-            <strong class="fs-6">¡Sigue brillando con nosotras!</strong>
-        </p>
+<section class="home-banner text-white">
+    <div class="container home-hero-content">
+        <div class="col-lg-7">
+            <span class="home-eyebrow">Lencería fina en Lima</span>
+            <h1 class="titulo-responsivo">Marbellin</h1>
+            <p class="mt-3 parrafo-responsivo">
+                Prendas delicadas, cómodas y elegantes para sentirte segura todos los días.
+                Elige tu talla, revisa disponibilidad y compra en línea con una experiencia simple.
+            </p>
+            <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
+                <a href="{{ route('productos.vista') }}" class="btn btn-primary btn-lg">Ver catálogo</a>
+                <a href="{{ url('/acceso/signup') }}" class="btn btn-outline-light btn-lg">Crear cuenta</a>
+            </div>
+        </div>
     </div>
 </section>
 @endsection

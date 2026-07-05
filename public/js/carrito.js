@@ -1,7 +1,19 @@
 document.addEventListener("DOMContentLoaded", () => {
     const pedidoId = document.getElementById("pedidoId")?.value;
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+    const escapeHtml = (value) =>
+        String(value).replace(/[&<>"']/g, (char) => {
+            const map = {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#039;",
+            };
+            return map[char];
+        });
 
-    if (pedidoId) {
+    if (pedidoId && window.paypal) {
         paypal
             .Buttons({
                 createOrder: (data, actions) => {
@@ -30,9 +42,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (!stockData.success) {
                         const errores = stockData.errores?.length
                             ? stockData.errores
-                                  .map((e) => `<li>${e}</li>`)
+                                  .map((e) => `<li>${escapeHtml(e)}</li>`)
                                   .join("")
-                            : "<li>Ocurrió un error al verificar el stock.</li>";
+                            : `<li>${
+                                  escapeHtml(
+                                      stockData.message ||
+                                  "Ocurrió un error al verificar el stock."
+                                  )
+                              }</li>`;
 
                         Swal.fire({
                             icon: "error",
@@ -45,21 +62,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     await actions.order.capture();
                     try {
-                        const res = await fetch(
-                            `/pago/exito?pedido_id=${pedidoId}`,
-                            {
-                                method: "GET",
-                                headers: {
-                                    "X-Requested-With": "XMLHttpRequest",
-                                },
-                            }
-                        );
+                        const res = await fetch("/pago/exito", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-Requested-With": "XMLHttpRequest",
+                                "X-CSRF-TOKEN": csrf,
+                                Accept: "application/json",
+                            },
+                            body: JSON.stringify({ pedido_id: pedidoId }),
+                        });
                         const dataJson = await res.json();
                         Swal.fire({
                             icon: dataJson.success ? "success" : "error",
                             text: dataJson.success
                                 ? "Tu pedido fue generado correctamente."
-                                : "Error al actualizar el pedido.",
+                                : dataJson.message ||
+                                  "Error al actualizar el pedido.",
                             timer: 2500,
                             showConfirmButton: false,
                         }).then(() => location.reload());

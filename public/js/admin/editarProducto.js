@@ -1,19 +1,20 @@
 const form = document.getElementById("formEditarProducto");
 const previewImg = document.querySelector("#previewImagen img");
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+const imageInput = form?.querySelector('[name="imagen"]');
+const field = (name) => form?.elements.namedItem(name);
 
-// Mostrar datos en el modal al hacer clic en "Editar"
 document.querySelectorAll(".btnEditarProducto").forEach((btn) => {
     btn.addEventListener("click", () => {
         const { codigo, nombre, precio, categoria, descripcion, imagen } =
             btn.dataset;
 
         form.action = `/admin/productos/${codigo}`;
-        form.codigo.value = codigo;
-        form.nombre.value = nombre;
-        form.precio.value = precio;
-        form.categoria.value = categoria;
-        form.descripcion.value = descripcion;
+        field("codigo").value = codigo;
+        field("nombre").value = nombre;
+        field("precio").value = precio;
+        field("categoria_id").value = categoria;
+        field("descripcion").value = descripcion;
 
         if (imagen) {
             previewImg.src = imagen;
@@ -25,8 +26,7 @@ document.querySelectorAll(".btnEditarProducto").forEach((btn) => {
     });
 });
 
-// Previsualización de imagen al seleccionar archivo
-document.getElementById("imagen").addEventListener("change", function () {
+imageInput?.addEventListener("change", function () {
     const file = this.files[0];
     if (file) {
         const reader = new FileReader();
@@ -41,7 +41,6 @@ document.getElementById("imagen").addEventListener("change", function () {
     }
 });
 
-// Envío del formulario
 form.addEventListener("submit", function (e) {
     e.preventDefault();
     const formData = new FormData(form);
@@ -68,11 +67,11 @@ form.addEventListener("submit", function (e) {
                 document.getElementById("editarProducto")
             ).hide();
 
-            const codigo = form.codigo.value.toLowerCase();
-            const nombre = form.nombre.value;
-            const precio = parseFloat(form.precio.value).toFixed(2);
-            const categoria = form.categoria.selectedOptions[0].text;
-            const descripcion = form.descripcion.value;
+            const codigo = field("codigo").value.toLowerCase();
+            const nombre = field("nombre").value;
+            const precio = parseFloat(field("precio").value).toFixed(2);
+            const categoria = field("categoria_id").selectedOptions[0].text;
+            const descripcion = field("descripcion").value;
 
             const item = document.querySelector(
                 `.producto-item[data-codigo="${codigo}"]`
@@ -94,7 +93,7 @@ form.addEventListener("submit", function (e) {
                     "p:nth-of-type(2)"
                 ).innerHTML = `<strong>Descripción:</strong> ${descripcion}`;
 
-                const nuevaImagen = form.imagen.files[0];
+                const nuevaImagen = imageInput?.files[0];
                 if (nuevaImagen) {
                     const reader = new FileReader();
                     reader.onload = (e) =>

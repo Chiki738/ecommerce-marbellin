@@ -1,25 +1,31 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+$imagenProducto = Str::startsWith($producto->imagen, ['http://', 'https://'])
+    ? $producto->imagen
+    : asset($producto->imagen);
+$logueado = auth()->check();
+$tieneStock = $producto->variantes->sum('cantidad') > 0;
+@endphp
+
 <div class="container mt-4 py-5">
-    <div class="row">
-        {{-- Imagen --}}
+    <div class="row g-5 align-items-start">
         <div class="col-md-6 d-flex justify-content-center">
             <div class="imagen-wrapper">
-                <img src="{{ $producto->imagen }}" alt="{{ $producto->nombre }}">
+                <img src="{{ $imagenProducto }}" alt="{{ $producto->nombre }}">
             </div>
         </div>
 
-        {{-- Información del producto --}}
         <div class="col-md-6">
-            <h2 class="fw-bold">{{ $producto->nombre }}</h2>
+            <span class="badge bg-primary mb-3">{{ optional($producto->categoria)->nombre ?? 'Sin categoría' }}</span>
+            <h1 class="fw-bold h2">{{ $producto->nombre }}</h1>
 
             <p class="text-muted">
-                <i class="bi bi-tag"></i>
-                <strong>Categoría:</strong> {{ optional($producto->categoria)->nombre ?? 'Sin categoría' }}
+                Código {{ $producto->codigo }}
             </p>
 
-            <p><i class="bi bi-card-text"></i> {{ $producto->descripcion }}</p>
+            <p class="lead">{{ $producto->descripcion }}</p>
 
             <div class="mb-3">
                 <span class="h4 text-primary">S/ {{ number_format($producto->precio, 2) }}</span>
@@ -29,7 +35,6 @@
                 @csrf
                 <input type="hidden" name="producto_codigo" value="{{ $producto->codigo }}">
 
-                {{-- Talla --}}
                 <div class="mb-3">
                     <h6 class="fw-bold">
                         <i class="bi bi-arrows-fullscreen"></i> Talla:
@@ -43,7 +48,6 @@
                     </div>
                 </div>
 
-                {{-- Color --}}
                 <div class="mb-3">
                     <h6 class="fw-bold">
                         <i class="bi bi-palette"></i> Color:
@@ -60,7 +64,6 @@
                     </div>
                 </div>
 
-                {{-- Cantidad --}}
                 <div class="mb-3">
                     <h6 class="fw-bold">
                         <i class="fa-solid fa-hashtag"></i> Cantidad:
@@ -68,13 +71,16 @@
                     <input type="number" name="cantidad" id="cantidad" value="1" min="1" class="form-control" style="width: 100px;">
                 </div>
 
-                {{-- Botón --}}
-                @php
-                $logueado = auth()->check();
-                @endphp
-                <button type="submit" class="btn btn-success mt-3"
-                    {{ $logueado ? '' : 'disabled title=Debes iniciar sesión para comprar' }}>
-                    {{ $logueado ? 'Agregar al carrito' : 'Iniciar sesión para comprar' }}
+                <button type="submit" class="btn btn-success mt-3 px-4"
+                    @disabled(!$logueado || !$tieneStock)
+                    title="{{ !$logueado ? 'Debes iniciar sesión para comprar' : (!$tieneStock ? 'Producto sin stock disponible' : '') }}">
+                    @if(!$logueado)
+                    Iniciar sesión para comprar
+                    @elseif(!$tieneStock)
+                    Sin stock disponible
+                    @else
+                    Agregar al carrito
+                    @endif
                 </button>
             </form>
         </div>

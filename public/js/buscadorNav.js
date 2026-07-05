@@ -17,11 +17,27 @@ document.addEventListener("DOMContentLoaded", () => {
         resultados.innerHTML = "";
     };
 
+    const escapeHtml = (value) =>
+        String(value).replace(/[&<>"']/g, (char) => {
+            const map = {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#039;",
+            };
+            return map[char];
+        });
+
     const crearHTMLProducto = ({ codigo, nombre, precio, imagen }) => `
-        <a href="/producto/${codigo}" class="d-flex align-items-center p-2 text-decoration-none text-dark border-bottom">
-            <img src="${imagen}" alt="${nombre}" class="me-2" style="width: 40px; height: 40px; object-fit: cover;">
+        <a href="/productos/${encodeURIComponent(
+            codigo
+        )}" class="d-flex align-items-center p-2 text-decoration-none text-dark border-bottom">
+            <img src="${escapeHtml(imagen)}" alt="${escapeHtml(
+        nombre
+    )}" class="me-2 rounded" style="width: 40px; height: 40px; object-fit: cover;">
             <div>
-                <strong>${nombre}</strong><br>
+                <strong>${escapeHtml(nombre)}</strong><br>
                 <small>S/ ${(+precio).toFixed(2)}</small>
             </div>
         </a>

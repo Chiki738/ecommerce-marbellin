@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\EstadoPedidoActualizado;
 use App\Models\User;
@@ -17,56 +18,67 @@ class PedidoController extends Controller
     public function agregarAlCarrito(Request $request)
     {
         if (!Auth::check()) {
-            return $this->respuesta($request, 'Debes iniciar sesión', 401, true);
+            return $this->respuesta('Debes iniciar sesión', 401, true);
         }
 
-        $request->validate([
-            'producto_codigo' => 'required|string|exists:productos,codigo',
-            'talla' => 'required|string',
-            'color' => 'required|string',
-            'cantidad' => 'required|integer|min:1',
+        $data = $request->validate([
+            'producto_codigo' => ['required', 'string', 'exists:productos,codigo'],
+            'talla' => ['required', 'string', 'max:10'],
+            'color' => ['required', 'string', 'max:40'],
+            'cantidad' => ['required', 'integer', 'min:1'],
         ]);
 
         try {
             $user = Auth::user();
-            $producto = Producto::where('codigo', $request->producto_codigo)->firstOrFail();
+            $producto = Producto::where('codigo', $data['producto_codigo'])->firstOrFail();
 
             $variante = VarianteProducto::where([
-                ['producto_codigo', $request->producto_codigo],
-                ['talla', $request->talla],
-                ['color', $request->color],
+                ['producto_codigo', $data['producto_codigo']],
+                ['talla', $data['talla']],
+                ['color', $data['color']],
             ])->first();
 
-            if (!$variante || $variante->cantidad < $request->cantidad) {
-                return $this->respuesta($request, 'Talla/color no disponible o stock insuficiente', 422, true);
+            if (!$variante || $variante->cantidad < $data['cantidad']) {
+                return $this->respuesta('Talla/color no disponible o stock insuficiente', 422, true);
             }
 
-            $pedido = Pedido::firstOrCreate(
-                ['cliente_id' => $user->cliente_id, 'estado_id' => 1],
-                [
-                    'fecha' => now(),
-                    'total' => 0,
-                    'direccion_envio' => $user->direccion,
-                    'distrito_id' => $user->distrito_id,
-                ]
-            );
+            DB::transaction(function () use ($user, $producto, $variante, $data) {
+                $pedido = Pedido::firstOrCreate(
+                    ['cliente_id' => $user->cliente_id, 'estado_id' => 1],
+                    [
+                        'fecha' => now(),
+                        'total' => 0,
+                        'direccion_envio' => $user->direccion,
+                        'distrito_id' => $user->distrito_id,
+                    ]
+                );
 
-            $detalle = DetallePedido::firstOrNew([
-                'pedido_id' => $pedido->id,
-                'producto_codigo' => $producto->codigo,
-                'variante_id' => $variante->id,
-            ]);
+                $detalle = DetallePedido::firstOrNew([
+                    'pedido_id' => $pedido->id,
+                    'producto_codigo' => $producto->codigo,
+                    'variante_id' => $variante->id,
+                ]);
 
-            $detalle->cantidad += $request->cantidad;
-            $detalle->precio_unit = $producto->precio;
-            $detalle->subtotal += $producto->precio * $request->cantidad;
-            $detalle->save();
+                $cantidad = (int) ($detalle->cantidad ?? 0) + (int) $data['cantidad'];
 
-            $pedido->update(['total' => $pedido->detalles()->sum('subtotal')]);
+                if ($cantidad > $variante->cantidad) {
+                    throw new \RuntimeException('La cantidad solicitada supera el stock disponible.', 422);
+                }
 
-            return $this->respuesta($request, 'Producto agregado al carrito');
+                $detalle->cantidad = $cantidad;
+                $detalle->precio_unit = $producto->precio;
+                $detalle->subtotal = $producto->precio * $cantidad;
+                $detalle->save();
+
+                $pedido->update(['total' => $pedido->detalles()->sum('subtotal')]);
+            });
+
+            return $this->respuesta('Producto agregado al carrito');
         } catch (\Exception $e) {
-            return $this->respuesta($request, 'Ocurrió un error al agregar el producto', 500, true);
+            $status = (int) ($e->getCode() ?: 500);
+            $status = $status >= 400 && $status < 600 ? $status : 500;
+
+            return $this->respuesta($e->getMessage() ?: 'Ocurrió un error al agregar el producto', $status, true);
         }
     }
 
@@ -82,16 +94,25 @@ class PedidoController extends Controller
 
     public function actualizarCantidad(Request $request, $id)
     {
-        $request->validate(['cantidad' => 'required|integer|min:1']);
+        $data = $request->validate(['cantidad' => ['required', 'integer', 'min:1']]);
 
-        $detalle = DetallePedido::findOrFail($id);
+        $detalle = $this->detalleCarritoDelUsuario($id);
+
+        if (!$detalle->variante || $data['cantidad'] > $detalle->variante->cantidad) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Stock insuficiente para la cantidad solicitada.',
+            ], 422);
+        }
+
         $detalle->update([
-            'cantidad' => $request->cantidad,
-            'subtotal' => $detalle->precio_unit * $request->cantidad,
+            'cantidad' => $data['cantidad'],
+            'subtotal' => $detalle->precio_unit * $data['cantidad'],
         ]);
 
-        $pedido = $detalle->pedido;
+        $pedido = $detalle->pedido()->with('detalles')->firstOrFail();
         $pedido->update(['total' => $pedido->detalles()->sum('subtotal')]);
+        $pedido->load('detalles');
 
         return response()->json([
             'success' => true,
@@ -110,7 +131,7 @@ class PedidoController extends Controller
 
     public function eliminar(Request $request, $id)
     {
-        $detalle = DetallePedido::findOrFail($id);
+        $detalle = $this->detalleCarritoDelUsuario($id);
         $pedido = $detalle->pedido;
 
         $detalle->delete();
@@ -143,12 +164,24 @@ class PedidoController extends Controller
     /**
      * Retorna respuesta JSON o redirect según tipo de request.
      */
-    private function respuesta(Request $request, string $mensaje, int $code = 200, bool $esError = false)
+    private function respuesta(string $mensaje, int $code = 200, bool $esError = false)
     {
         return response()->json([
             $esError ? 'error' : 'message' => $mensaje
         ], $code);
     }
+
+    private function detalleCarritoDelUsuario($id): DetallePedido
+    {
+        return DetallePedido::with(['pedido', 'producto', 'variante'])
+            ->whereKey($id)
+            ->whereHas('pedido', function ($query) {
+                $query->where('cliente_id', Auth::user()->cliente_id)
+                    ->where('estado_id', 1);
+            })
+            ->firstOrFail();
+    }
+
     public function index()
     {
         $pedidos = Pedido::with('cliente')->get();
@@ -158,11 +191,19 @@ class PedidoController extends Controller
 
     public function buscarPorFiltros(Request $request)
     {
-        $id = $request->query('id');
-        $email = $request->query('email');
-        $estado = $request->query('estado');
-        $fecha = $request->query('fecha');
-        $perPage = $request->query('perPage', 10);
+        $data = $request->validate([
+            'id' => ['nullable', 'integer', 'min:1'],
+            'email' => ['nullable', 'email'],
+            'estado' => ['nullable', 'integer', 'exists:estado_pedido,id'],
+            'fecha' => ['nullable', 'in:hoy,semana,mes'],
+            'perPage' => ['nullable', 'integer', 'in:5,10,20'],
+        ]);
+
+        $id = $data['id'] ?? null;
+        $email = $data['email'] ?? null;
+        $estado = $data['estado'] ?? null;
+        $fecha = $data['fecha'] ?? null;
+        $perPage = $data['perPage'] ?? 10;
 
         // Si se proporciona ID del pedido, devolver solo ese
         if ($id) {
@@ -218,8 +259,12 @@ class PedidoController extends Controller
 
     public function cambiarEstado(Request $request, $id)
     {
+        $data = $request->validate([
+            'estado_id' => ['required', 'integer', 'exists:estado_pedido,id'],
+        ]);
+
         $pedido = Pedido::with('cliente')->findOrFail($id);
-        $estado = EstadoPedido::findOrFail($request->estado_id);
+        $estado = EstadoPedido::findOrFail($data['estado_id']);
         $pedido->estado_id = $estado->id;
         $pedido->save();
 
@@ -246,7 +291,7 @@ class PedidoController extends Controller
     public function cancelar($id)
     {
         $pedido = Pedido::with('cliente')->findOrFail($id);
-        $estado = EstadoPedido::where('nombre', 'cancelado')->first();
+        $estado = EstadoPedido::where('nombre', 'cancelado')->firstOrFail();
         $pedido->estado_id = $estado->id;
         $pedido->save();
 

@@ -10,7 +10,7 @@ $navItems[] = ['name' => 'Historial', 'url' => route('client.historial'), 'icon'
 }
 @endphp
 
-<nav class="navbar navbar-expand-lg bg-light position-relative" data-bs-theme="light">
+<nav class="navbar navbar-expand-lg navbar-marbellin position-relative" data-bs-theme="light">
     <div class="container-fluid">
         <a class="navbar-brand" href="{{ url('/') }}">
             <img src="{{ asset('img/logo.png') }}" alt="Logo" class="navbar-logo">
@@ -45,7 +45,7 @@ $navItems[] = ['name' => 'Historial', 'url' => route('client.historial'), 'icon'
                 <button type="submit" class="btn btn-outline-danger">Cerrar sesión</button>
             </form>
             @else
-            <a href="{{ url('/acceso') }}" class="btn btn-outline-primary ms-3">Login / Signup</a>
+            <a href="{{ url('/acceso') }}" class="btn btn-outline-primary ms-3">Ingresar</a>
             @endauth
         </div>
 
@@ -82,12 +82,15 @@ $navItems[] = ['name' => 'Historial', 'url' => route('client.historial'), 'icon'
                     <button type="submit" class="btn btn-outline-danger">Cerrar sesión</button>
                 </form>
                 @else
-                <a href="{{ url('/acceso') }}" class="btn btn-outline-primary ms-3">Login / Signup</a>
+                <a href="{{ url('/acceso') }}" class="btn btn-outline-primary ms-3">Ingresar</a>
                 @endauth
             </div>
         </div>
     </div>
 </nav>
 
-<link rel="stylesheet" href="{{ asset('css/nav.css') }}">
+@once
+@push('scripts')
 <script src="{{ asset('js/buscadorNav.js') }}"></script>
+@endpush
+@endonce

@@ -26,13 +26,13 @@
 
                 <h5 class="text-primary fw-bold mt-4 mb-3">SÍGUENOS EN</h5>
                 <div class="d-flex gap-3 fs-4 flex-wrap">
-                    <a href="https://www.facebook.com/p/Maribell%C3%ADn-lencer%C3%ADa-100054525651612/" target="_blank" aria-label="Facebook" class="text-secondary">
+                    <a href="https://www.facebook.com/p/Maribell%C3%ADn-lencer%C3%ADa-100054525651612/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" class="text-secondary">
                         <i class="fab fa-facebook"></i>
                     </a>
-                    <a href="https://www.instagram.com/marbellalenceria/" target="_blank" aria-label="Instagram" class="text-secondary">
+                    <a href="https://www.instagram.com/marbellalenceria/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="text-secondary">
                         <i class="fab fa-instagram"></i>
                     </a>
-                    <a href="https://www.tiktok.com/@maribellin.lenceria" target="_blank" aria-label="TikTok" class="text-secondary">
+                    <a href="https://www.tiktok.com/@maribellin.lenceria" target="_blank" rel="noopener noreferrer" aria-label="TikTok" class="text-secondary">
                         <i class="fab fa-tiktok"></i>
                     </a>
                 </div>
@@ -54,7 +54,7 @@
                         title="Ubicación de Marbellin Lencería">
                     </iframe>
                 </div>
-                <a href="https://www.google.com/maps/place/Jr.+Am%C3%A9rica+325,+La+Victoria+15018,+Peru" target="_blank" class="btn btn-outline-primary btn-sm mt-3">
+                <a href="https://www.google.com/maps/place/Jr.+Am%C3%A9rica+325,+La+Victoria+15018,+Peru" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm mt-3">
                     Ver en Google Maps
                 </a>
             </div>
@@ -64,7 +64,7 @@
         <hr class="my-4">
 
         <div class="text-center text-muted small">
-            © 2025 Marbellin Lencería. Todos los derechos reservados.
+            © {{ now()->year }} Marbellin Lencería. Todos los derechos reservados.
         </div>
     </div>
 </footer>

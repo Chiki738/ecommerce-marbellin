@@ -76,7 +76,3 @@
         </div>
     </div>
 </div>
-
-@push('scripts')
-<script src="{{ asset('js/productosAdmin/agregarProducto.js') }}"></script>
-@endpush

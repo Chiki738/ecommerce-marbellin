@@ -22,12 +22,12 @@ class VarianteController extends Controller
     public function buscar(Request $request)
     {
         $request->validate([
-            'producto_id' => 'required|integer|exists:productos,id',
-            'talla' => 'required|string',
-            'color' => 'required|string',
+            'producto_codigo' => ['required', 'string', 'exists:productos,codigo'],
+            'talla' => ['required', 'string', 'max:10'],
+            'color' => ['required', 'string', 'max:40'],
         ]);
 
-        $variante = VarianteProducto::where('producto_id', $request->producto_id)
+        $variante = VarianteProducto::where('producto_codigo', $request->producto_codigo)
             ->where('talla', $request->talla)
             ->where('color', $request->color)
             ->first();
